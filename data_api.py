@@ -35,14 +35,16 @@ def fetch_uci_datasets(name=None):
     uci_datasets = [iris, liver, segment, satimage, wine, heart]
 
     for dataset in uci_datasets :
-        dataset.n_class = set(dataset.target)
+        dataset.n_class = len(set(dataset.target))
         dataset.n_dim = dataset.data.shape[1]
 
     uci_datasets_bunch = Bunch(**{d.name: d for d in uci_datasets})
     if name is None :
-        return uci_datasets_bunch
-    else :
-        return uci_datasets_bunch[name]
+        return uci_datasets
+    elif type(name) is str :
+        uci_datasets_bunch[name]
+    elif type(name) is list:
+        return [uci_datasets_bunch[n] for n in name]
 
 
 def fetch_synthetic_datasets():

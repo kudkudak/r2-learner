@@ -1,5 +1,7 @@
 import sklearn
 from functools import partial
+from sklearn.cross_validation import KFold
+from sklearn.grid_search import GridSearchCV
 from sklearn.svm import SVC
 import numpy as np
 from scipy import linalg as la
@@ -182,8 +184,8 @@ def _sigmoid(x) :
 
 #TODO: fit C
 class R2SVMLearner(BaseEstimator):
-    def __init__(self, kernel='linear', C=1, activation='sigmoid', recurrent=True, depth=7,\
-                 seed=None, beta=0.1, scale=False, use_prev = False, jobs=1):
+    def __init__(self, C=1, activation='sigmoid', recurrent=True, depth=7,\
+                 seed=None, beta=0.1, scale=False, use_prev = False):
 
         self.use_prev = use_prev
         self.depth = depth
@@ -194,7 +196,6 @@ class R2SVMLearner(BaseEstimator):
         self.activation = activation
         self.recurrent = recurrent
         self.C = C
-        self.jobs = jobs
         self.X_tr = []
         self.layer_coefs_ = []
         self.fit_layer_scores_ = []
@@ -209,7 +210,7 @@ class R2SVMLearner(BaseEstimator):
         else:
             self.activation = activation
 
-    def fit(self, X, Y):
+    def fit(self, X, Y, fit_c=False):
         self.K = len(set(Y)) # Class number
 
         # Seed
@@ -223,7 +224,8 @@ class R2SVMLearner(BaseEstimator):
             for m in self.models_:
                 m.set_params(random_state=self.random_state)
         else :
-            self.models_ = [OneVsRestClassifier(self.base_cls().set_params(random_state=self.random_state), n_jobs=self.jobs) for _ in xrange(self.depth)]
+            self.models_ = [OneVsRestClassifier(self.base_cls().set_params(random_state=self.random_state), \
+                                                n_jobs=1) for _ in xrange(self.depth)]
 
         # Prepare data
         X_mod = X
@@ -235,7 +237,17 @@ class R2SVMLearner(BaseEstimator):
         # Fit
         for i in xrange(self.depth):
             X_mod = self.scalers_[i].fit_transform(X_mod) if self.scale else X_mod
-            self.models_[i].fit(X_mod, Y)
+            if fit_c :
+                if self.K > 2 :
+                    grid = GridSearchCV(self.models_[i], {'estimator__C': [10**d for d in xrange(-2,6)]}, \
+                                        cv=KFold(X.shape[0], n_folds=5, shuffle=True), n_jobs=1)
+                else :
+                    grid = GridSearchCV(self.models_[i], {'C': [10**d for d in xrange(-2,6)]}, \
+                                        cv=KFold(X.shape[0], n_folds=5, shuffle=True), n_jobs=1)
+                grid.fit(X,Y)
+                self.models_[i] = grid
+            else:
+                self.models_[i].fit(X_mod, Y)
 
             o.append(self.models_[i].decision_function(X_mod) if self.K > 2 else \
                 np.hstack([-self.models_[i].decision_function(X_mod), self.models_[i].decision_function(X_mod)]))
@@ -256,13 +268,11 @@ class R2SVMLearner(BaseEstimator):
 
         return self
 
-    def predict(self, X):
+    def predict(self, X, all_layers=True):
         # Prepare data
         X_mod = X
         o = []
         delta = np.zeros(shape=X.shape)
-
-        all_layers=False
 
         for i in xrange(self.depth-1):
             X_mod = self.scalers_[i].transform(X_mod) if self.scale else X_mod
@@ -272,7 +282,7 @@ class R2SVMLearner(BaseEstimator):
                 np.hstack([-oi, oi]))
 
             if all_layers :
-                self.layer_predictions_.append(self.models_[i].predict(X))
+                self.layer_predictions_.append(self.models_[i].predict(X_mod))
 
             if self.recurrent:
                 delta += np.dot(o[i], self.W[i])
@@ -289,6 +299,7 @@ class R2SVMLearner(BaseEstimator):
         self.layer_predictions_.append(self.models_[-1].predict(X_mod))
         return self.models_[-1].predict(X_mod)
 
+    # TODO: this may not work right now
     def fit_predict(self, X, Y, score_func=sklearn.metrics.accuracy_score):
         self.K = len(set(Y)) # Class number
 
