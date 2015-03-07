@@ -9,9 +9,6 @@ from sklearn.preprocessing import MinMaxScaler
 from data_api import *
 from models import R2SVMLearner, R2ELMLearner, ELM
 import sklearn
-from sklearn.grid_search import GridSearchCV
-from fit_r2svm import fit_r2svm_on_dataset
-from fit_r2elm import fit_r2elm_on_dataset
 
 iris = fetch_uci_datasets('iris')
 liver = fetch_uci_datasets('liver')
