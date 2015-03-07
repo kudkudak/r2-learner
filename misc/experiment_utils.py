@@ -1,5 +1,3 @@
-# TODO: refactor to a class :)
-
 from optparse import OptionParser
 import cPickle
 from config import c

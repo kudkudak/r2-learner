@@ -4,6 +4,9 @@ from matplotlib import pyplot as plt
 import numpy as np
 from models import R2SVMLearner
 import math
+import os
+
+from misc.config import c
 
 class Bunch(dict):
     """Container object for datasets: dictionary-like object that exposes its keys as attributes."""
@@ -28,7 +31,10 @@ def fetch_uci_datasets(name=None):
     satimage.name = 'satimage'
     wine.name = 'wine'
 
-    heart_x, heart_y = datasets.load_svmlight_file('./data/heart')
+
+    #Download heart from http://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary.html
+    assert(os.path.exists(os.path.join(c["DATA_DIR"], 'heart')))
+    heart_x, heart_y = datasets.load_svmlight_file(os.path.join(c["DATA_DIR"], 'heart'))
     heart_x = heart_x.toarray()
     heart = Bunch(**{'name': 'heart', 'data': heart_x, 'target': heart_y, 'DESCR': 'libsvm heart data set'})
 
@@ -51,7 +57,8 @@ def fetch_synthetic_datasets():
     """Returns dict-like object (Bunch) contaning synthetic datasets"""
 
     X_moon, Y_moon = sklearn.datasets.make_moons(n_samples=1000, noise=0.04)
-    X_spiral, Y_spiral = np.loadtxt("data/two_spirals.x", skiprows=1), np.loadtxt("data/two_spirals.y", skiprows=1)
+    X_spiral, Y_spiral = np.loadtxt(os.path.join(c["DATA_DIR"], "two_spirals.x"), skiprows=1), \
+                         np.loadtxt(os.path.join(c["DATA_DIR"], "two_spirals.y"), skiprows=1)
 
     moon = Bunch(**{'name': 'moon', 'data': X_moon, 'target': Y_moon, 'DESCR': 'synthetic two moons data set', 'n_class': 2, 'n_dim': 2})
     spiral = Bunch(**{'name': 'spiral', 'data': X_spiral, 'target': Y_spiral, 'DESCR': 'synthetic two spirals data set', 'n_class': 2, 'n_dim': 2})
