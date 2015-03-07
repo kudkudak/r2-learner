@@ -42,7 +42,7 @@ def fetch_uci_datasets(name=None):
     if name is None :
         return uci_datasets
     elif type(name) is str :
-        uci_datasets_bunch[name]
+        return uci_datasets_bunch[name]
     elif type(name) is list:
         return [uci_datasets_bunch[n] for n in name]
 
@@ -57,6 +57,21 @@ def fetch_synthetic_datasets():
     spiral = Bunch(**{'name': 'spiral', 'data': X_spiral, 'target': Y_spiral, 'DESCR': 'synthetic two spirals data set', 'n_class': 2, 'n_dim': 2})
 
     return Bunch(**{'moon': moon, 'spiral': spiral})
+
+
+def shuffle_data(data, seed=None) :
+
+    X, Y = data.data, data.target
+    assert X.shape[0] == Y.shape[0]
+
+    if seed is not None:
+        np.random.seed(seed)
+    p = np.random.permutation(len(X))
+
+    data.data = X[p]    # Copying data here!
+    data.target = Y[p]
+
+    return data
 
 
 # TODO: move this to different file?

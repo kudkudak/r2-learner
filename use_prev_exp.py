@@ -1,5 +1,5 @@
 from data_api import fetch_uci_datasets
-from fit_svm import fit_on_dataset
+from fit_r2svm import fit_r2svm_on_dataset
 import cPickle
 import time
 
@@ -14,7 +14,7 @@ fold_list = []
 
 # Run on the data sets with: use_prev=True
 for data in datasets :
-    E_grid, E_fold = fit_on_dataset(data,
+    E_grid, E_fold = fit_r2svm_on_dataset(data,
                                     param_grid_in=param_grid,
                                     grid_config_in=grid_config,
                                     fold_config_in=fold_config,
@@ -34,7 +34,7 @@ fold_list = []
 
 # Run on the data sets with: use_prev=False
 for data in datasets :
-    E_grid, E_fold = fit_on_dataset(data,
+    E_grid, E_fold = fit_r2svm_on_dataset(data,
                                     param_grid_in=param_grid,
                                     grid_config_in=grid_config,
                                     fold_config_in=fold_config,
