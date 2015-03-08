@@ -22,8 +22,9 @@ def _sigmoid(x):
 
 class R2SVMLearner(BaseEstimator):
     def __init__(self, C=1, activation='sigmoid', recurrent=True, depth=7,\
-                 seed=None, beta=0.1, scale=False, use_prev = False):
+                 seed=None, beta=0.1, scale=False, use_prev = False, fit_c=None):
 
+        self.fit_c = None
         self.use_prev = use_prev
         self.depth = depth
         self.beta = beta
@@ -45,7 +46,7 @@ class R2SVMLearner(BaseEstimator):
         else:
             self.activation = activation
 
-    def fit(self, X, Y, fit_c='random'):
+    def fit(self, X, Y):
         self.K = len(set(Y)) # Class number
 
         # Seed
@@ -73,7 +74,7 @@ class R2SVMLearner(BaseEstimator):
         for i in xrange(self.depth):
             X_mod = self.scalers_[i].fit_transform(X_mod) if self.scale else X_mod
 
-            if fit_c == 'grid':
+            if self.fit_c == 'grid':
                 if self.K > 2 :
                     grid = GridSearchCV(self.models_[i], {'estimator__C': [np.exp(d) for d in xrange(-2,6)]}, \
                                         cv=KFold(X_mod.shape[0], n_folds=3, shuffle=True, random_state=self.random_state), n_jobs=1)
@@ -82,7 +83,7 @@ class R2SVMLearner(BaseEstimator):
                                         cv=KFold(X_mod.shape[0], n_folds=3, shuffle=True, random_state=self.random_state), n_jobs=1)
                 grid.fit(X_mod,Y)
                 self.models_[i] = grid
-            elif fit_c == 'random' :
+            elif self.fit_c == 'random' :
                 best_C = None
                 best_score = 0.
                 c = np.random.uniform(size=10)
@@ -198,8 +199,10 @@ class ELM(BaseEstimator):
 
 class R2ELMLearner(BaseEstimator):
     def __init__(self, h=60, activation='sigmoid', recurrent=True, depth=7,\
-                 seed=None, beta=0.1, scale=False, use_prev = False, max_h=100):
+                 seed=None, beta=0.1, scale=False, use_prev = False, max_h=100,
+                 fit_h=None):
 
+        self.fit_h = fit_h
         self.use_prev = use_prev
         self.depth = depth
         self.beta = beta
@@ -224,7 +227,7 @@ class R2ELMLearner(BaseEstimator):
         else:
             self.activation = activation
 
-    def fit(self, X, Y, fit_h=None):
+    def fit(self, X, Y):
         self.K = len(set(Y)) # Class number
 
         # Models and scalers
@@ -241,12 +244,12 @@ class R2ELMLearner(BaseEstimator):
         # Fit
         for i in xrange(self.depth):
             X_mod = self.scalers_[i].fit_transform(X_mod) if self.scale else X_mod
-            if fit_h == 'grid':
+            if self.fit_h == 'grid':
                 grid = GridSearchCV(self.models_[i], {'h': [h for h in xrange(10, self.max_h+1, 10)]}, \
                                     cv=KFold(X_mod.shape[0], n_folds=3, shuffle=True, random_state=self.random_state), n_jobs=1)
                 grid.fit(X_mod,Y)
                 self.models_[i] = grid
-            elif fit_h == 'random':
+            elif self.fit_h == 'random':
                 best_h = None
                 best_score = 0.
                 h = np.random.uniform(size=10)
