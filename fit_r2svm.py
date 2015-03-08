@@ -22,7 +22,7 @@ def fit_r2svm_grid(data, config, logger=None):
     assert hasattr(data, 'name')
     assert hasattr(data, 'data')
     assert hasattr(data, 'target')
-    assert ['experiment_type', 'param_grid','scoring', 'fit_c', 'cv', 'refit', 'store_clf'] <= config.keys()
+    assert ['experiment_type', 'param_grid','scoring', 'cv', 'refit', 'store_clf'] <= config.keys()
     assert config['experiment_type'] == 'grid'
     ### Prepare result holders ###
     results = {}
@@ -31,8 +31,7 @@ def fit_r2svm_grid(data, config, logger=None):
     E = {"config": config, "results": results, "monitors": monitors}
 
     model = R2SVMLearner()
-    cv_grid = GridSearchCV(model, param_grid=config['param_grid'], scoring=config['scoring'], n_jobs=-1, \
-                           fit_params={'fit_c': config['fit_c']}, cv=config['cv'])
+    cv_grid = GridSearchCV(model, param_grid=config['param_grid'], scoring=config['scoring'], n_jobs=-1, cv=config['cv'])
 
     X = data.data
     Y = data.target
@@ -72,7 +71,7 @@ def fit_r2svm(data, config, logger=None) :
     assert hasattr(data, 'name')
     assert hasattr(data, 'data')
     assert hasattr(data, 'target')
-    assert ['experiment_type', 'n_folds', 'fold_seed', 'params', 'store_clf', 'fit_c'] <= config.keys()
+    assert ['experiment_type', 'n_folds', 'fold_seed', 'params', 'store_clf'] <= config.keys()
     assert config['experiment_type'] == 'k-fold'
 
     ### Prepare result holders ###b
@@ -95,7 +94,7 @@ def fit_r2svm(data, config, logger=None) :
 
         model = R2SVMLearner(**config['params'])
         train_start = time.time()
-        model.fit(X_train, Y_train, fit_c=config['fit_c'])
+        model.fit(X_train, Y_train)
         monitors['train_time'].append(time.time() - train_start)
 
         if config['store_clf'] :
@@ -153,7 +152,6 @@ def fit_r2svm_on_dataset(data, param_grid_in=None, grid_config_in=None, fold_con
                    'experiment_type': 'grid',
                    'refit': True,
                    'scoring': 'accuracy',
-                   'fit_c': 'random', # 'grid', 'random' or None
                    'fold_seed': fold_seed,
                    'cv': KFold(n=data.data.shape[0], n_folds=3, random_state=random_state),
                    'store_clf': False,
@@ -170,7 +168,6 @@ def fit_r2svm_on_dataset(data, param_grid_in=None, grid_config_in=None, fold_con
     fold_config = {'experiment_name': 'R2SVM k-fold_testing_on_' + data.name,
                    'experiment_type': 'k-fold',
                    'n_folds': 5,
-                   'fit_c': E_grid['config']['fit_c'],
                    'fold_seed': E_grid['config']['fold_seed'],
                    'store_clf': True,
                    'params': params}
@@ -186,6 +183,7 @@ def default_r2svm_grid_parameters() :
     return { 'C': [np.exp(i) for i in xrange(-2,6)],
              'beta': [0.05 * i for i in xrange(0,7)],
              'depth': [5],
+             'fit_c': None, # 'grid', 'random' or None
              'scale': [True],
              'recurrent': [True],
              'use_prev': [True],

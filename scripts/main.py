@@ -9,6 +9,10 @@ from sklearn.preprocessing import MinMaxScaler
 from data_api import *
 from models import R2SVMLearner, R2ELMLearner, ELM
 import sklearn
+from fit_svms import fit_svc_on_dataset
+from fit_elms import fit_elm_on_dataset
+from fit_r2svm import fit_r2svm_on_dataset
+from fit_r2elm import fit_r2elm_on_dataset
 
 iris = fetch_uci_datasets('iris')
 liver = fetch_uci_datasets('liver')
@@ -38,16 +42,16 @@ print "ELM+SIG on liver: %.2f" % accuracy_score(Y_liver, sig_model.predict(X_liv
 print "ELM+RBF on liver: %.2f" % accuracy_score(Y_liver, rbf_model.predict(X_liver))
 
 # param_grid = {'h': [50],
-#               'beta': [0.04]}
-#
-# E_grid, E = fit_elm_on_dataset(data=dataset, param_grid_in=param_grid, to_file=False)
-#
-# print E['config']['params']
-# print E['results']['mean_acc']
-# print E['monitors']['std']
-# print E['monitors']['train_time']
-#
-# print E_grid['monitors']['grid_time']
+#               'activation': ['sigmoid']}
+
+param_grid = {'h': [60], 'activation': ['sigmoid']}
+
+data = fetch_uci_datasets('liver')
+
+E_grid, E = fit_elm_on_dataset(data=data, param_grid_in=param_grid, to_file=False)
+print E_grid['results']['best_score']
+print E['results']['mean_acc']
+
 
 
 # data = fetch_uci_datasets('iris')

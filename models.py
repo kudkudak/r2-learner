@@ -23,8 +23,8 @@ def _sigmoid(x):
 class R2SVMLearner(BaseEstimator):
     def __init__(self, C=1, activation='sigmoid', recurrent=True, depth=7,\
                  seed=None, beta=0.1, scale=False, use_prev = False, fit_c=None):
-
-        self.fit_c = None
+        self.name = 'r2svm'
+        self.fit_c = fit_c
         self.use_prev = use_prev
         self.depth = depth
         self.beta = beta
@@ -155,7 +155,7 @@ class R2SVMLearner(BaseEstimator):
 
 def _elm_vectorized_rbf(X, W, B):
     WS = np.array([np.sum(np.multiply(W,W), axis=0)])
-    XS = np.array([np.sum(np.multiply(X,X), axis=1)]).T[0]
+    XS = np.array([np.sum(np.multiply(X,X), axis=1)]).T[0,:]
     return np.exp(-np.multiply(B, -2*X.dot(W) + WS + XS))
 
 def _elm_sigmoid(X, W, B):
@@ -164,10 +164,11 @@ def _elm_sigmoid(X, W, B):
 
 class ELM(BaseEstimator):
 
-    def __init__(self, h=60, activation='linear', random_state=None):
+    def __init__(self, h=60, activation='linear', seed=None):
+        self.name = 'elm'
         self.h = h
         self.activation = activation
-        self.random_state = random_state if random_state is not None \
+        self.random_state = np.random.RandomState(seed) if seed is not None \
             else np.random.RandomState(np.random.randint(0, np.iinfo(np.int32).max))
 
         assert activation in ['rbf', 'sigmoid', 'linear']
@@ -201,7 +202,7 @@ class R2ELMLearner(BaseEstimator):
     def __init__(self, h=60, activation='sigmoid', recurrent=True, depth=7,\
                  seed=None, beta=0.1, scale=False, use_prev = False, max_h=100,
                  fit_h=None):
-
+        self.name = 'r2elm'
         self.fit_h = fit_h
         self.use_prev = use_prev
         self.depth = depth
