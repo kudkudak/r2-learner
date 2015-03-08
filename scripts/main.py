@@ -13,47 +13,48 @@ from fit_svms import fit_svc_on_dataset
 from fit_elms import fit_elm_on_dataset
 from fit_r2svm import fit_r2svm_on_dataset
 from fit_r2elm import fit_r2elm_on_dataset
-
-iris = fetch_uci_datasets('iris')
-liver = fetch_uci_datasets('liver')
-X_iris, Y_iris = iris.data, iris.target
-X_liver, Y_liver = liver.data, liver.target
-
-scaler = MinMaxScaler((-1,1))
-X_iris = scaler.fit_transform(X_iris)
-
-scaler = MinMaxScaler((-1,1))
-X_liver = scaler.fit_transform(X_liver)
-
-sig_model = ELM(activation='sigmoid')
-rbf_model = ELM(activation='rbf')
-sig_model.fit(X_iris,Y_iris)
-rbf_model.fit(X_iris,Y_iris)
-print "%s: dim: %i, class: %i" % (iris.name, iris.n_dim, iris.n_class)
-print "ELM+SIG on iris: %.2f" % accuracy_score(Y_iris, sig_model.predict(X_iris))
-print "ELM+RBF on iris: %.2f" % accuracy_score(Y_iris, rbf_model.predict(X_iris))
-print
-print "%s: dim: %i, class: %i" % (liver.name, liver.n_dim, liver.n_class)
-sig_model = ELM(activation='sigmoid')
-rbf_model = ELM(activation='rbf')
-sig_model.fit(X_liver,Y_liver)
-rbf_model.fit(X_liver,Y_liver)
-print "ELM+SIG on liver: %.2f" % accuracy_score(Y_liver, sig_model.predict(X_liver))
-print "ELM+RBF on liver: %.2f" % accuracy_score(Y_liver, rbf_model.predict(X_liver))
+#
+# iris = fetch_uci_datasets('iris')
+# liver = fetch_uci_datasets('liver')
+# X_iris, Y_iris = iris.data, iris.target
+# X_liver, Y_liver = liver.data, liver.target
+#
+# scaler = MinMaxScaler((-1,1))
+# X_iris = scaler.fit_transform(X_iris)
+#
+# scaler = MinMaxScaler((-1,1))
+# X_liver = scaler.fit_transform(X_liver)
+#
+# sig_model = ELM(activation='sigmoid')
+# rbf_model = ELM(activation='rbf')
+# sig_model.fit(X_iris,Y_iris)
+# rbf_model.fit(X_iris,Y_iris)
+# print "%s: dim: %i, class: %i" % (iris.name, iris.n_dim, iris.n_class)
+# print "ELM+SIG on iris: %.2f" % accuracy_score(Y_iris, sig_model.predict(X_iris))
+# print "ELM+RBF on iris: %.2f" % accuracy_score(Y_iris, rbf_model.predict(X_iris))
+# print
+# print "%s: dim: %i, class: %i" % (liver.name, liver.n_dim, liver.n_class)
+# sig_model = ELM(activation='sigmoid')
+# rbf_model = ELM(activation='rbf')
+# sig_model.fit(X_liver,Y_liver)
+# rbf_model.fit(X_liver,Y_liver)
+# print "ELM+SIG on liver: %.2f" % accuracy_score(Y_liver, sig_model.predict(X_liver))
+# print "ELM+RBF on liver: %.2f" % accuracy_score(Y_liver, rbf_model.predict(X_liver))
 
 # param_grid = {'h': [50],
 #               'activation': ['sigmoid']}
 
-param_grid = {'h': [60], 'activation': ['sigmoid']}
+param_grid = {'h': [60,80,100,200], 'activation': ['rbf'], 'seed':[42]}
 
 data = fetch_uci_datasets('liver')
 
 E_grid, E = fit_elm_on_dataset(data=data, param_grid_in=param_grid, to_file=False)
 print E_grid['results']['best_score']
+
 print E['results']['mean_acc']
 
 
-
+print sklearn.metrics.accuracy_score(data.target, E_grid['results']['best_clf'].predict(data.data))
 # data = fetch_uci_datasets('iris')
 # data = shuffle_data(data)
 # model = R2ELMLearner(seed=42)

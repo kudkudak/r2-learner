@@ -155,7 +155,7 @@ class R2SVMLearner(BaseEstimator):
 
 def _elm_vectorized_rbf(X, W, B):
     WS = np.array([np.sum(np.multiply(W,W), axis=0)])
-    XS = np.array([np.sum(np.multiply(X,X), axis=1)]).T[0,:]
+    XS = np.array([np.sum(np.multiply(X,X), axis=1)]).T
     return np.exp(-np.multiply(B, -2*X.dot(W) + WS + XS))
 
 def _elm_sigmoid(X, W, B):
@@ -171,10 +171,10 @@ class ELM(BaseEstimator):
         self.random_state = np.random.RandomState(seed) if seed is not None \
             else np.random.RandomState(np.random.randint(0, np.iinfo(np.int32).max))
 
-        assert activation in ['rbf', 'sigmoid', 'linear']
+        assert self.activation in ['rbf', 'sigmoid', 'linear']
 
     def fit(self, X, y):
-        self.b = LabelBinarizer()
+        self.lb = LabelBinarizer()
         self.W = self.random_state.normal(size=(X.shape[1], self.h))
         self.B = self.random_state.normal(size=self.h)
         if self.activation == 'rbf':
@@ -183,8 +183,9 @@ class ELM(BaseEstimator):
             H = _elm_sigmoid(X, self.W, self.B)
         else :
             H = X.dot(self.W)
-        self.b.fit(y)
-        self.beta = la.pinv(H).dot(self.b.transform(y))
+        self.lb.fit(y)
+        self.beta = la.pinv(H).dot(self.lb.transform(y))
+        return self
 
     def decision_function(self, X):
         if self.activation == 'rbf':
@@ -195,7 +196,7 @@ class ELM(BaseEstimator):
             return X.dot(self.W).dot(self.beta)
 
     def predict(self, X):
-        return self.b.inverse_transform(self.decision_function(X))
+        return self.lb.inverse_transform(self.decision_function(X))
 
 
 class R2ELMLearner(BaseEstimator):

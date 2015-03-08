@@ -139,7 +139,7 @@ def fit_svc_on_dataset(data, param_grid_in=None, grid_config_in=None, fold_confi
                    'refit': True,
                    'scoring': 'accuracy',
                    'fold_seed': fold_seed,
-                   'cv': KFold(n=data.data.shape[0], n_folds=3, random_state=random_state),
+                   'cv': KFold(n=data.data.shape[0], shuffle=True, n_folds=3, random_state=random_state),
                    'store_clf': False,
                    'param_grid': param_grid}
 

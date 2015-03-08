@@ -45,9 +45,9 @@ def fit_elm_grid(data, config, logger=None):
     results['best_params'] = cv_grid.best_params_
     results['best_score'] = cv_grid.best_score_
     if config['refit'] :
-        results['best_cls'] = ELM(**cv_grid.best_params_).fit(X,Y)
+        results['best_clf'] = ELM(**cv_grid.best_params_).fit(X,Y)
     else :
-        results['best_cls'] = cv_grid.best_estimator_
+        results['best_clf'] = cv_grid.best_estimator_
 
     monitors['mean_fold_scores'] = [s[1] for s in cv_grid.grid_scores_]
     monitors['std_fold_scores'] = [np.std(s[2]) for s in cv_grid.grid_scores_]
