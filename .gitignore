@@ -65,3 +65,7 @@ notebooks/.ipynb_checkpoints/
 
 # gedit
 *~
+
+# experiments
+logs/
+cache/

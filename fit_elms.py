@@ -1,6 +1,7 @@
 from misc.experiment_utils import get_exp_logger
 from data_api import shuffle_data
 from models import ELM
+from misc.params import grid_config, fold_config
 
 from sklearn.grid_search import GridSearchCV
 from sklearn.cross_validation import KFold
@@ -45,9 +46,9 @@ def fit_elm_grid(data, config, logger=None):
     results['best_params'] = cv_grid.best_params_
     results['best_score'] = cv_grid.best_score_
     if config['refit'] :
-        results['best_clf'] = ELM(**cv_grid.best_params_).fit(X,Y)
+        results['best_cls'] = ELM(**cv_grid.best_params_).fit(X,Y)
     else :
-        results['best_clf'] = cv_grid.best_estimator_
+        results['best_cls'] = cv_grid.best_estimator_
 
     monitors['fold_params'] = [ s[0] for s in cv_grid.grid_scores_ ]
     monitors['mean_fold_scores'] = [s[1] for s in cv_grid.grid_scores_]
@@ -107,7 +108,7 @@ def fit_elm(data, config, logger=None) :
 
         test_start = time.time()
         Y_predicted = model.predict(X_test)
-        monitors['test_time'] = time.time() - test_start
+        monitors['test_time'].append(time.time() - test_start)
 
         monitors['acc_fold'].append(accuracy_score(Y_test, Y_predicted))
         monitors['cm'].append(confusion_matrix(Y_test, Y_predicted))
@@ -119,6 +120,7 @@ def fit_elm(data, config, logger=None) :
     monitors['data_name'] = data.name
 
     results["mean_acc"] = monitors["acc_fold"].mean()
+    monitors["mean_acc"] = monitors["acc_fold"].mean()
 
     if logger is not None :
         logger.info(results)
@@ -139,14 +141,10 @@ def fit_elm_on_dataset(data, param_grid_in=None, grid_config_in=None, fold_confi
     fold_seed = np.random.randint(0, np.iinfo(np.int32).max)
     random_state = np.random.RandomState(fold_seed)
 
-    grid_config = {'experiment_name': 'ELM+' + str(param_grid['activation'][0]).upper() + '_grid_search_on_' + data.name + str(time.time()),
-                   'experiment_type': 'grid',
-                   'refit': True,
-                   'scoring': 'accuracy',
-                   'fold_seed': fold_seed,
-                   'cv': KFold(n=data.data.shape[0], n_folds=3, shuffle=True, random_state=random_state),
-                   'store_clf': False,
-                   'param_grid': param_grid}
+    grid_config['experiment_name'] = 'ELM+' + str(param_grid['activation'][0]).upper() + '_grid_search_on_' + data.name + str(time.time())
+    grid_config['fold_seed'] = fold_seed
+    grid_config['cv'] = KFold(n=data.data.shape[0], shuffle=True, n_folds=3, random_state=random_state)
+    grid_config['param_grid'] = param_grid
 
     if grid_config_in is not None :
         grid_config.update(grid_config_in)
@@ -156,12 +154,9 @@ def fit_elm_on_dataset(data, param_grid_in=None, grid_config_in=None, fold_confi
     E_grid = fit_elm_grid(data, grid_config, logger)
     params = E_grid['results']['best_params']
 
-    fold_config = {'experiment_name': 'ELM+' + str(param_grid['activation'][0]).upper() + '_k-fold_testing_on_' + data.name + str(time.time()),
-                   'experiment_type': 'k-fold',
-                   'n_folds': 3,
-                   'fold_seed': E_grid['config']['fold_seed'],
-                   'store_clf': True,
-                   'params': params}
+    fold_config['experiment_name'] = 'ELM+' + str(param_grid['activation'][0]).upper() + '_k-fold_testing_on_' + data.name + str(time.time())
+    fold_config['fold_seed'] =  E_grid['config']['fold_seed']
+    fold_config['params'] = params
 
     if fold_config_in is not None :
         fold_config.update(fold_config_in)

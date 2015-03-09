@@ -2,6 +2,7 @@ from optparse import OptionParser
 import cPickle
 import logging
 import os
+from config import c
 
 
 def get_exp_logger(config, to_file=False):
@@ -13,7 +14,7 @@ def get_exp_logger(config, to_file=False):
     logger.addHandler(ch)
     if to_file:
         logger.propagate = False
-        ch_file = logging.FileHandler(os.path.join(name + ".log"))
+        ch_file = logging.FileHandler(os.path.join(c["LOG_DIR"],name + ".log"))
         ch_file.setLevel(level=logging.INFO)
         ch_file.setFormatter(formatter)
         logger.addHandler(ch_file)
