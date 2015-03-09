@@ -48,9 +48,11 @@ def fit_svc_grid(data, config, logger=None):
     else :
         results['best_cls'] = cv_grid.best_estimator_
 
+    monitors['fold_params'] = [ s[0] for s in cv_grid.grid_scores_ ]
     monitors['mean_fold_scores'] = [s[1] for s in cv_grid.grid_scores_]
     monitors['std_fold_scores'] = [np.std(s[2]) for s in cv_grid.grid_scores_]
     monitors['best_std'] = [ np.std(s[2]) for s in cv_grid.grid_scores_ if s[1] == cv_grid.best_score_ ]
+    monitors['data_name'] = data.name
 
     if config['store_clf'] :
         monitors['clf'] = cv_grid
@@ -134,7 +136,7 @@ def fit_svc_on_dataset(data, param_grid_in=None, grid_config_in=None, fold_confi
     fold_seed = np.random.randint(0, np.iinfo(np.int32).max)
     random_state = np.random.RandomState(fold_seed)
 
-    grid_config = {'experiment_name': 'SVC+' + str(param_grid['kernel']) + '_grid_search_on_' + data.name,
+    grid_config = {'experiment_name': 'SVC' + '_grid_search_on_' + data.name + str(time.time()),
                    'experiment_type': 'grid',
                    'refit': True,
                    'scoring': 'accuracy',
@@ -151,7 +153,7 @@ def fit_svc_on_dataset(data, param_grid_in=None, grid_config_in=None, fold_confi
     E_grid = fit_svc_grid(data, grid_config, logger)
     params = E_grid['results']['best_params']
 
-    fold_config = {'experiment_name': 'SVC+' + str(param_grid['kernel']) + '_k-fold_testing_on_' + data.name,
+    fold_config = {'experiment_name': 'SVC' + '_k-fold_on_' + data.name + str(time.time()),
                    'experiment_type': 'k-fold',
                    'n_folds': 5,
                    'fold_seed': E_grid['config']['fold_seed'],
@@ -161,7 +163,7 @@ def fit_svc_on_dataset(data, param_grid_in=None, grid_config_in=None, fold_confi
     if fold_config_in is not None :
         fold_config.update(fold_config_in)
 
-    logger.name = fold_config['experiment_name']
+    logger = get_exp_logger(fold_config, to_file=to_file)
 
     return E_grid, fit_svc(data, fold_config, logger)
 

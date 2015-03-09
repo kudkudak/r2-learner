@@ -20,7 +20,7 @@ def fit_model_on_dataset(name, data, params):
                                                   grid_config_in=params['grid'],
                                                   fold_config_in=params['fold'],
                                                   to_file=True)
-    elif name == 'elm':
+    elif name[:3] == 'elm':
         E_grid, E_detailed = fit_elm_on_dataset(data,
                                                 param_grid_in=params['model'],
                                                 grid_config_in=params['grid'],

@@ -220,7 +220,7 @@ class R2ELMLearner(BaseEstimator):
         if self.seed is None: self.seed = np.random.randint(0, np.iinfo(np.int32).max)
         self.random_state = np.random.RandomState(self.seed)
 
-        self.base_cls = partial(ELM, h=self.h, activation='linear', random_state=self.random_state)
+        self.base_cls = partial(ELM, h=self.h, activation='linear', seed=self.seed)
 
         if activation == 'tanh':
             self.activation = _tanh
