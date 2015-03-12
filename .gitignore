@@ -69,3 +69,5 @@ notebooks/.ipynb_checkpoints/
 # experiments
 logs/
 cache/
+
+./misc/config.py
