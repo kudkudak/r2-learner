@@ -69,5 +69,10 @@ notebooks/.ipynb_checkpoints/
 # experiments
 logs/
 cache/
-
 ./misc/config.py
+
+# fermi
+connect_fermi.sh
+ssh_fermi.sh
+fermi/
+setup_ipython.sh
