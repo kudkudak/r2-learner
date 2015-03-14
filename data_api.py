@@ -6,8 +6,9 @@ import pickle
 from scipy.sparse import vstack
 import math
 import os
+from misc.config import c
 
-data_dir = './data'
+data_dir = c["DATA_DIR"]
 
 class Bunch(dict):
     """Container object for datasets: dictionary-like object that exposes its keys as attributes."""
@@ -92,10 +93,6 @@ def fetch_uci_datasets(names=None):
         mnist = Bunch(**{'name': 'mnist', 'data': mnist_x, 'target': mnist_y})
         uci_datasets.append(mnist)
 
-    for dataset in uci_datasets :
-        dataset.n_class = len(set(dataset.target))
-        dataset.n_dim = dataset.data.shape[1]
-
     return uci_datasets
 
 
@@ -143,38 +140,38 @@ def shuffle_data(data, seed=None) :
     return data
 
 
-# TODO: move this to different file?
-def plot_contour(model, n=300, X=None, Y=None ):
-    """Contour plot with option to provide original traning data"""
-
-    x, y = np.linspace(X.min(), X.max(), n),  np.linspace(X.min(), X.max(), n)
-    xx, yy = np.meshgrid(x, y)
-    z = model.predict(np.c_[xx.ravel(), yy.ravel()])
-    # z = model._feed_forward(np.c_[xx.ravel(), yy.ravel()])[:,0]
-    plt.contourf(xx, yy, z.reshape(n,n), cmap=plt.cm.Paired, alpha=0.8)
-    if X is not None and Y is not None :
-        assert len(X) == len(Y)
-        plt.scatter(X[:,0], X[:,1], c=Y,  cmap=plt.cm.Paired, alpha=0.8)
-    plt.show()
-
-
-# TODO: make both models compatible, move this to different file?
-def run_and_plot(X, Y, **R2_params):
-    plot_side = int(math.sqrt(R2_params['depth']))
-    if plot_side**2 < R2_params['depth']: plot_side += 1
-
-    for i in range(R2_params['depth']):
-        model = R2SVMLearner(**R2_params)
-        model.fit(X, Y)
-
-        plt.subplot(plot_side, plot_side, i + 1)
-
-        N = 200
-
-        x, y = np.linspace(X.min(), X.max(), N),  np.linspace(X.min(), X.max(), N)
-        xx, yy = np.meshgrid(x, y)
-        z = model.predict(np.c_[xx.ravel(), yy.ravel()])
-        plt.contourf(xx, yy, z.reshape(N,N), cmap=plt.cm.Paired, alpha=0.8)
-        plt.scatter(X[:,0], X[:,1], c=Y,  cmap=plt.cm.Paired, alpha=0.8)
-        plt.show()
+# # TODO: move this to different file?
+# def plot_contour(model, n=300, X=None, Y=None ):
+#     """Contour plot with option to provide original traning data"""
+#
+#     x, y = np.linspace(X.min(), X.max(), n),  np.linspace(X.min(), X.max(), n)
+#     xx, yy = np.meshgrid(x, y)
+#     z = model.predict(np.c_[xx.ravel(), yy.ravel()])
+#     # z = model._feed_forward(np.c_[xx.ravel(), yy.ravel()])[:,0]
+#     plt.contourf(xx, yy, z.reshape(n,n), cmap=plt.cm.Paired, alpha=0.8)
+#     if X is not None and Y is not None :
+#         assert len(X) == len(Y)
+#         plt.scatter(X[:,0], X[:,1], c=Y,  cmap=plt.cm.Paired, alpha=0.8)
+#     plt.show()
+#
+#
+# # TODO: make both models compatible, move this to different file?
+# def run_and_plot(X, Y, **R2_params):
+#     plot_side = int(math.sqrt(R2_params['depth']))
+#     if plot_side**2 < R2_params['depth']: plot_side += 1
+#
+#     for i in range(R2_params['depth']):
+#         model = R2SVMLearner(**R2_params)
+#         model.fit(X, Y)
+#
+#         plt.subplot(plot_side, plot_side, i + 1)
+#
+#         N = 200
+#
+#         x, y = np.linspace(X.min(), X.max(), N),  np.linspace(X.min(), X.max(), N)
+#         xx, yy = np.meshgrid(x, y)
+#         z = model.predict(np.c_[xx.ravel(), yy.ravel()])
+#         plt.contourf(xx, yy, z.reshape(N,N), cmap=plt.cm.Paired, alpha=0.8)
+#         plt.scatter(X[:,0], X[:,1], c=Y,  cmap=plt.cm.Paired, alpha=0.8)
+#         plt.show()
 

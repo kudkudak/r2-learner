@@ -1,3 +1,7 @@
+import sys, os
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+
+
 import pandas as pd
 import os
 import pickle
@@ -24,7 +28,7 @@ def main():
     results = {}
 
     for data in small_datasets:
-        exp = grid_search(model, data, rbf_params, logger=logger)
+        exp = grid_search(model, data, rbf_params, logger=logger, verbose=8)
         results[data.name] = pd.DataFrame.from_dict(exp['monitors'].update(exp['results']))
         print 'ebfELM on ' + data.name + " done!"
 
