@@ -9,7 +9,7 @@ import numpy as np
 from fit_models import grid_search
 from elm import ELM
 from datetime import datetime
-from data_api import fetch_small_datasets
+from data_api import fetch_uci_datasets
 from misc.experiment_utils import get_logger
 from misc.config import c
 
@@ -18,18 +18,18 @@ def main():
     # RBF
     exp_name = 'rbfELM_grid_' + str(datetime.now().time())[:-7]
 
-    rbf_params = {'h': [i for i in xrange(20, 201, 10)],
+    rbf_params = {'h': [i for i in xrange(20, 101, 10)],
                      'activation' : ['rbf'],
-                     'seed': [666]}
+                     'random_state': [666]}
 
-    datasets = fetch_small_datasets()
+    datasets = fetch_uci_datasets(['liver', 'iris', 'heart'])
     model = ELM()
     logger = get_logger(exp_name, to_file=False)
     results = {d.name: {} for d in datasets}
     monitors = {d.name: {} for d in datasets}
 
     for data in datasets:
-        exp = grid_search(model, data, rbf_params, logger=logger, verbose=3)
+        exp = grid_search(model, data, rbf_params, logger=logger, verbose=0)
         results[data.name] = exp['results']
         monitors[data.name] = exp['monitors']
         results[data.name].update(monitors[data.name])
@@ -37,16 +37,16 @@ def main():
 
     ret = pd.DataFrame.from_dict(results)
 
-    f = open(os.path.join(c["RESULTS_DIR"],exp_name + '.pkl'), 'wb')
-    pickle.dump(results, f)
-    f.close()
+    # f = open(os.path.join(c["RESULTS_DIR"],exp_name + '.pkl'), 'wb')
+    # pickle.dump(results, f)
+    # f.close()
 
     # SIG
     exp_name = 'sigELM_grid_' + str(datetime.now().time())[:-7]
 
-    sig_params = {'h': [i for i in xrange(20, 201, 10)],
+    sig_params = {'h': [i for i in xrange(20, 101, 10)],
                      'activation' : ['sigmoid'],
-                     'seed': [666]}
+                     'random_state': [666]}
 
     logger = get_logger(exp_name, to_file=False)
     results = {d.name: {} for d in datasets}
@@ -61,9 +61,9 @@ def main():
 
     ret = pd.DataFrame.from_dict(results)
 
-    f = open(os.path.join(c["RESULTS_DIR"],exp_name + '.pkl'), 'wb')
-    pickle.dump(ret, f)
-    f.close()
+    # f = open(os.path.join(c["RESULTS_DIR"],exp_name + '.pkl'), 'wb')
+    # pickle.dump(ret, f)
+    # f.close()
 
 if __name__ == '__main__':
     main()
