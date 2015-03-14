@@ -4,7 +4,7 @@ Basic config for whole project. Modify those variables to reflect changes
 import os
 import logging
 
-base_dir = "/home/igor/Dropbox/CORES15/r2-learner"
+base_dir = "/mnt/users/czarnecki/local/r2-learner"
 name = "r2learner"
 
 # Logger
@@ -30,6 +30,7 @@ logger = get_logger("cores_r2learner")
 c = {
     "CACHE_DIR" : os.path.join(base_dir, "cache"),
     "DATA_DIR": os.path.join(base_dir, "data"),
+    "RESULTS_DIR": os.path.join(base_dir, "results"),
     "BASE_DIR": base_dir,
     "LOG_DIR": os.path.join(base_dir, "logs"),
     "CURRENT_EXPERIMENT_CONFIG":{"experiment_name":"base_experiment_name"}
