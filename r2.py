@@ -51,7 +51,7 @@ class R2Learner(BaseEstimator):
         if i != self.depth - 1:
 
             self._o.append(self.models_[i].decision_function(X) if self.K > 2 else \
-                np.hstack([-self.models_[i].decision_function(X), self.models_[i].decision_function(X)]))
+            np.hstack([-self.models_[i].decision_function(X), self.models_[i].decision_function(X)]))
 
             if self.recurrent:
                 self._delta += np.dot(self._o[i], self.W[i])
@@ -85,11 +85,11 @@ class R2Learner(BaseEstimator):
             self.seed = np.random.randint(0, np.iinfo(np.int32).max)
         else:
             np.random.seed(self.seed)
-            print("WARNING: seeding whole numpy (forced by bug in SVC)")
+            # print("WARNING: seeding whole numpy (forced by bug in SVC)")
         self.random_state = np.random.RandomState(self.seed)
 
         # Models and scalers
-        self.scalers_ = [MinMaxScaler((-1, 1)) for _ in xrange(self.depth)]
+        self.scalers_ = [MinMaxScaler((-1.2, 1.2)) for _ in xrange(self.depth)]
         if self.K <= 2:
             self.models_ = [self.base_cls() for _ in xrange(self.depth)]
             for m in self.models_:
@@ -139,11 +139,14 @@ class R2Learner(BaseEstimator):
 
 class R2ELMLearner(R2Learner):
     def __init__(self, activation='sigmoid', recurrent=True, depth=7,\
-                 seed=None, beta=0.1, scale=False, use_prev=False, max_h=100,
+                 seed=None, beta=0.1, scale=False, use_prev=False, max_h=100, h=10,
                  fit_h=None):
 
+	self.h = h
+	self.max_h = max_h
+
         if fit_h == None:
-            base_cls = partial(ELM, h=self.h, activation='linear', seed=self.seed)
+            base_cls = partial(ELM, h=self.h, activation='linear')
         else:
             raise NotImplementedError()
 

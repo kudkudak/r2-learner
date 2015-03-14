@@ -6,9 +6,9 @@ import pickle
 from fit_models import grid_search
 from r2 import R2ELMLearner
 from datetime import datetime
-from data_api import fetch_small_datasets
+from data_api import fetch_small_datasets, fetch_uci_datasets
 from misc.experiment_utils import get_logger
-
+from misc.config import c
 
 def main():
 
@@ -23,7 +23,7 @@ def main():
               'use_prev': [True, False],
               'seed': [666]}
 
-    datasets = fetch_small_datasets()
+    datasets = fetch_uci_datasets(['iris', 'liver', 'heart'])
     model = R2ELMLearner()
     logger = get_logger(exp_name, to_file=False)
     results = {d.name: {} for d in datasets}
@@ -38,7 +38,7 @@ def main():
 
     ret = pd.DataFrame.from_dict(results)
 
-    f = open(os.path.join('./cache/' + exp_name + '.pkl'), 'wb')
+    f = open(os.path.join(c["RESULTS_DIR"],exp_name + '.pkl'), 'wb')
     pickle.dump(ret, f)
     f.close()
 

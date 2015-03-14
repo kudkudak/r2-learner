@@ -13,12 +13,17 @@ def _elm_sigmoid(X, W, B):
 
 class ELM(BaseEstimator):
 
-    def __init__(self, h=60, activation='linear', seed=None):
+    def __init__(self, h=60, activation='linear', random_state=None):
         self.name = 'elm'
         self.h = h
         self.activation = activation
-        self.random_state = np.random.RandomState(seed) if seed is not None \
-            else np.random.RandomState(np.random.randint(0, np.iinfo(np.int32).max))
+
+        if random_state is None:
+            self.random_state = np.random.RandomState(np.random.randint(0, np.iinfo(np.int32).max))
+        elif type(random_state) == int:
+            self.random_state = np.random.RandomState(random_state)
+        else:
+            self.random_state = random_state
 
         assert self.activation in ['rbf', 'sigmoid', 'linear']
 

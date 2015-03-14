@@ -7,7 +7,7 @@ from sklearn.svm import SVC
 from datetime import datetime
 from data_api import fetch_small_datasets
 from misc.experiment_utils import get_logger
-
+from misc.config import c
 
 def main():
 
@@ -33,7 +33,7 @@ def main():
 
     ret = pd.DataFrame.from_dict(results)
 
-    f = open(os.path.join('./cache/' + exp_name + '.pkl'), 'wb')
+    f = open(os.path.join(c["RESULTS_DIR"],exp_name + '.pkl'), 'wb')
     pickle.dump(ret, f)
     f.close()
 
