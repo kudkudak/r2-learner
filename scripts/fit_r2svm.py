@@ -21,6 +21,7 @@ def main():
               'beta': [0.04 * i for i in xrange(1, 6)],
               'depth': [i for i in xrange(2, 11, 3)],
               'fit_c': [None],
+              'activation': ['sigmoid'],
               'scale': [True], #[True, False],
               'recurrent': [True, False],
               'use_prev': [True, False],

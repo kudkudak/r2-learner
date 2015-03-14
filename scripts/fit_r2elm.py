@@ -1,8 +1,12 @@
+import sys, os
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+
+
 import pandas as pd
 import os
 import pickle
 from fit_models import grid_search
-from models import R2ELMLearner
+from r2 import R2ELMLearner
 from datetime import datetime
 from data_api import fetch_uci_datasets
 from misc.experiment_utils import get_logger
@@ -27,7 +31,7 @@ def main():
     results = {}
 
     for data in small_datasets:
-        exp = grid_search(model, data, params, logger=logger)
+        exp = grid_search(model, data, params, logger=logger, verbose=81)
         results[data.name] = pd.DataFrame.from_dict(exp['monitors'].update(exp['results']))
         print data.name + " done!"
 
