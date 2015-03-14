@@ -4,6 +4,19 @@ import logging
 import os
 from config import c
 
+def get_logger(name, to_file=False):
+    logger = logging.Logger(name=name, level=logging.INFO)
+    ch = logging.StreamHandler()
+    formatter = logging.Formatter("%(asctime)s \t" + name + "  %(message)s")
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
+    if to_file:
+        logger.propagate = False
+        ch_file = logging.FileHandler(os.path.join(c["LOG_DIR"],name + ".log"))
+        ch_file.setLevel(level=logging.INFO)
+        ch_file.setFormatter(formatter)
+        logger.addHandler(ch_file)
+    return logger
 
 def get_exp_logger(config, to_file=False):
     name = config["experiment_name"]

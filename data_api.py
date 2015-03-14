@@ -3,10 +3,11 @@ from sklearn import datasets
 from matplotlib import pyplot as plt
 import numpy as np
 from models import R2SVMLearner
+from scipy.sparse import vstack
 import math
 import os
 
-from misc.config import c
+data_dir = './data'
 
 class Bunch(dict):
     """Container object for datasets: dictionary-like object that exposes its keys as attributes."""
@@ -32,13 +33,32 @@ def fetch_uci_datasets(name=None):
     wine.name = 'wine'
 
 
-    #Download heart from http://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary.html
-    assert(os.path.exists(os.path.join(c["DATA_DIR"], 'heart')))
-    heart_x, heart_y = datasets.load_svmlight_file(os.path.join(c["DATA_DIR"], 'heart'))
+    # Download heart from http://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary.html
+    # Dwonload glass.scale, aloi.scale and pendigits from http://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass.html
+    assert(os.path.exists(os.path.join(data_dir, 'heart')))
+    assert(os.path.exists(os.path.join(data_dir, 'glass.scale')))
+    assert(os.path.exists(os.path.join(data_dir, 'aloi.scale')))
+    assert(os.path.exists(os.path.join(data_dir, 'pendigits')))
+    assert(os.path.exists(os.path.join(data_dir, 'pendigits.t')))
+
+    heart_x, heart_y = datasets.load_svmlight_file(os.path.join(data_dir, 'heart'))
     heart_x = heart_x.toarray()
     heart = Bunch(**{'name': 'heart', 'data': heart_x, 'target': heart_y, 'DESCR': 'libsvm heart data set'})
 
-    uci_datasets = [iris, liver, segment, satimage, wine, heart]
+    glass_x, glass_y = datasets.load_svmlight_file(os.path.join(data_dir, 'glass.scale'))
+    glass = Bunch(**{'name': 'glass', 'data': glass_x, 'target': glass_y, 'DESCR': 'libsvm glass.scale data set'})
+
+    aloi_x, aloi_y = datasets.load_svmlight_file(os.path.join(data_dir, 'aloi.scale'))
+    aloi = Bunch(**{'name': 'aloi', 'data': aloi_x, 'target': aloi_y, 'DESCR':'libsvm aloi.scale data set'})
+
+    pen_train_x, pen_train_y, pen_test_x, pen_test_y = datasets.load_svmlight_files((os.path.join(data_dir, 'pendigits'),
+                                                                                     os.path.join(data_dir, 'pendigits.t')))
+    pen_x = vstack([pen_train_x, pen_test_x])
+    pen_y = np.hstack([pen_train_y, pen_test_y])
+
+    pendigits = Bunch(**{'name': 'pendigits', 'data': pen_x, 'target': pen_y, 'DESC': 'linsvm pendigits dataset'})
+
+    uci_datasets = [iris, liver, segment, satimage, wine, heart, glass, aloi, pendigits]
 
     for dataset in uci_datasets :
         dataset.n_class = len(set(dataset.target))
