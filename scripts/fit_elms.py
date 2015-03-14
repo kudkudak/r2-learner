@@ -7,9 +7,9 @@ import os
 import pickle
 import numpy as np
 from fit_models import grid_search
-from models import ELM
+from elm import ELM
 from datetime import datetime
-from data_api import fetch_uci_datasets
+from data_api import fetch_small_datasets
 from misc.experiment_utils import get_logger
 
 
@@ -22,15 +22,20 @@ def main():
                      'activation' : ['rbf'],
                      'seed': [666]}
 
-    small_datasets = fetch_uci_datasets(['iris', 'liver', 'heart'])
+    datasets = fetch_small_datasets()
     model = ELM()
     logger = get_logger(exp_name, to_file=False)
-    results = {}
+    results = {d.name: {} for d in datasets}
+    monitors = {d.name: {} for d in datasets}
 
-    for data in small_datasets:
-        exp = grid_search(model, data, rbf_params, logger=logger, verbose=8)
-        results[data.name] = pd.DataFrame.from_dict(exp['monitors'].update(exp['results']))
-        print 'ebfELM on ' + data.name + " done!"
+    for data in datasets:
+        exp = grid_search(model, data, rbf_params, logger=logger, verbose=3)
+        results[data.name] = exp['results']
+        monitors[data.name] = exp['monitors']
+        results[data.name].update(monitors[data.name])
+        print data.name + " done!"
+
+    ret = pd.DataFrame.from_dict(results)
 
     f = open(os.path.join('./cache/' + exp_name + '.pkl'), 'wb')
     pickle.dump(results, f)
@@ -44,15 +49,20 @@ def main():
                      'seed': [666]}
 
     logger = get_logger(exp_name, to_file=False)
-    results = {}
+    results = {d.name: {} for d in datasets}
+    monitors = {d.name: {} for d in datasets}
 
-    for data in small_datasets:
-        exp = grid_search(model, data, sig_params, logger=logger)
-        results[data.name] = pd.DataFrame.from_dict(exp['monitors'].update(exp['results']))
-        print 'sigELM on ' + data.name + " done!"
+    for data in datasets:
+        exp = grid_search(model, data, sig_params, logger=logger, verbose=3)
+        results[data.name] = exp['results']
+        monitors[data.name] = exp['monitors']
+        results[data.name].update(monitors[data.name])
+        print data.name + " done!"
+
+    ret = pd.DataFrame.from_dict(results)
 
     f = open(os.path.join('./cache/' + exp_name + '.pkl'), 'wb')
-    pickle.dump(results, f)
+    pickle.dump(ret, f)
     f.close()
 
 if __name__ == '__main__':

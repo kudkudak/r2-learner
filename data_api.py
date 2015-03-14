@@ -93,6 +93,10 @@ def fetch_uci_datasets(names=None):
         mnist = Bunch(**{'name': 'mnist', 'data': mnist_x, 'target': mnist_y})
         uci_datasets.append(mnist)
 
+    for dataset in uci_datasets :
+        dataset.n_class = len(set(dataset.target))
+        dataset.n_dim = dataset.data.shape[1]
+
     return uci_datasets
 
 
