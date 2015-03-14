@@ -2,12 +2,13 @@ import sklearn
 from sklearn import datasets
 from matplotlib import pyplot as plt
 import numpy as np
-from models import R2SVMLearner
+from r2 import R2SVMLearner
 from scipy.sparse import vstack
 import math
 import os
+from misc.config import c
 
-data_dir = './data'
+data_dir = c["DATA_DIR"]
 
 class Bunch(dict):
     """Container object for datasets: dictionary-like object that exposes its keys as attributes."""
@@ -40,6 +41,8 @@ def fetch_uci_datasets(name=None):
     assert(os.path.exists(os.path.join(data_dir, 'aloi.scale')))
     assert(os.path.exists(os.path.join(data_dir, 'pendigits')))
     assert(os.path.exists(os.path.join(data_dir, 'pendigits.t')))
+
+    print "/mnt/users/czarnecki/local/r2-learner"
 
     heart_x, heart_y = datasets.load_svmlight_file(os.path.join(data_dir, 'heart'))
     heart_x = heart_x.toarray()

@@ -10,16 +10,6 @@ from sklearn.base import BaseEstimator, clone
 from functools import partial
 from elm import ELM
 
-
-def _tanh(x):                      # these are needed for multiprocessing purposes
-    return 2./(1.+np.exp(x)) - 1.
-
-def _sigmoid(x):
-    return 1.0/(1.0 + np.exp(-x))
-
-def _rbf(x):
-    return np.exp(-np.power((x-np.mean(x, axis=0)),2))
-
 class R2SVMLearner(BaseEstimator):
     def __init__(self, C=1, activation='sigmoid', recurrent=True, depth=7,\
                  seed=None, beta=0.1, scale=False, use_prev = False, fit_c=None):
@@ -38,26 +28,33 @@ class R2SVMLearner(BaseEstimator):
         self.layer_predictions_ = []
 
         if activation == 'tanh':
-            # self.activation = lambda x: 2./(1.+np.exp(x)) - 1.
+            def _tanh(x):
+                return 2./(1.+np.exp(x)) - 1.
             self.activation = _tanh
         elif activation == 'sigmoid':
-            # self.activation = lambda x: 1.0/(1.0 + np.exp(-x))
+            def _sigmoid(x):
+                return 1.0/(1.0 + np.exp(-x))
             self.activation = _sigmoid
         elif activation == 'rbf':
-            # self.activation = lambda x: 1.0/(1.0 + np.exp(-x))
+            def _rbf(x):
+                return np.exp(-np.power((x-np.mean(x, axis=0)),2))
             self.activation = _rbf
         else:
+            raise BaseException("You have passed activation as function")
             self.activation = activation
 
     def fit(self, X, Y):
         self.K = len(set(Y)) # Class number
 
         # Seed
-        if self.seed is None: self.seed = np.random.randint(0, np.iinfo(np.int32).max)
-        self.random_state = np.random.RandomState(self.seed)
+        if self.seed is None:
+            self.seed = np.random.randint(0, np.iinfo(np.int32).max)
+        else:
+            np.random.seed(self.seed)
+            print("WARNING: seeding whole numpy, becuase of bug in SVC")
 
         # Models and scalers
-        self.scalers_ = [MinMaxScaler() for _ in xrange(self.depth)]
+        self.scalers_ = [MinMaxScaler(-1,1) for _ in xrange(self.depth)]
         if self.K <= 2:
             self.models_ = [self.base_cls() for _ in xrange(self.depth)]
             for m in self.models_:
@@ -87,7 +84,7 @@ class R2SVMLearner(BaseEstimator):
                                         cv=KFold(X_mod.shape[0], n_folds=3, shuffle=True, random_state=self.random_state), n_jobs=1)
                 grid.fit(X_mod,Y)
                 self.models_[i] = grid
-            elif self.fit_c == 'random' :
+            elif self.fit_c == 'random':
                 best_C = None
                 best_score = 0.
                 c = np.random.uniform(size=10)
@@ -106,23 +103,23 @@ class R2SVMLearner(BaseEstimator):
             else:
                 self.models_[i].fit(X_mod, Y)
 
-            o.append(self.models_[i].decision_function(X_mod) if self.K > 2 else \
-                np.hstack([-self.models_[i].decision_function(X_mod), self.models_[i].decision_function(X_mod)]))
+            if self.depth != -1:
+                o.append(self.models_[i].decision_function(X_mod) if self.K > 2 else \
+                    np.hstack([-self.models_[i].decision_function(X_mod), self.models_[i].decision_function(X_mod)]))
 
-            self.W.append(self.random_state.normal(size=(self.K, X.shape[1])))
+                self.W.append(self.random_state.normal(size=(self.K, X.shape[1])))
 
-            if self.recurrent:
-                delta += np.dot(o[i], self.W[i])
-            else:
-                delta = np.dot(o[i], self.W[i])
+                if self.recurrent:
+                    delta += np.dot(o[i], self.W[i])
+                else:
+                    delta = np.dot(o[i], self.W[i])
 
-            if self.use_prev:
-                X_mod = self.activation(X_mod + self.beta*delta)
-            else:
-                self.X_moved.append((self.scalers_[0].transform(X) if self.scale else X) + self.beta*delta)
-                X_mod = self.activation(self.X_moved[-1])
-
-            self.X_tr.append(X_mod)
+                if self.use_prev:
+                    X_mod = self.activation(X_mod + self.beta*delta)
+                else:
+                    self.X_moved.append((self.scalers_[0].transform(X) if self.scale else X) + self.beta*delta)
+                    X_mod = self.activation(self.X_moved[-1])
+                self.X_tr.append(X_mod)
 
         return self
 
@@ -164,13 +161,7 @@ class R2SVMLearner(BaseEstimator):
         return self.models_[-1].predict(X_mod)
 
 
-def _elm_vectorized_rbf(X, W, B):
-    WS = np.array([np.sum(np.multiply(W,W), axis=0)])
-    XS = np.array([np.sum(np.multiply(X,X), axis=1)]).T
-    return np.exp(-np.multiply(B, -2*X.dot(W) + WS + XS))
 
-def _elm_sigmoid(X, W, B):
-    return _sigmoid(X.dot(W) + B)
 
 
 
