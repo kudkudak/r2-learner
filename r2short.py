@@ -46,35 +46,36 @@ class R2SVMLearnerShort(BaseEstimator):
         if not self._fitted:
             self.models_[i].fit(X, Y)
 
-        self._o.append(self.models_[i].decision_function(X) if self.K > 2 else \
-            np.hstack([-self.models_[i].decision_function(X), self.models_[i].decision_function(X)]))
+        if i != self.depth - 1:
 
-        if self.recurrent:
-            self._delta += np.dot(self._o[i], self.W[i])
+            self._o.append(self.models_[i].decision_function(X) if self.K > 2 else \
+                np.hstack([-self.models_[i].decision_function(X), self.models_[i].decision_function(X)]))
+
+            if self.recurrent:
+                self._delta += np.dot(self._o[i], self.W[i])
+            else:
+                self._delta = np.dot(self._o[i], self.W[i])
+
+            if self.use_prev:
+                self._X_moved.append(X + self.beta*self._delta)
+                X = getattr(self, "_" + self.activation)(self._X_moved[-1])
+            else:
+                # TODO: fix performance
+                self._X_moved.append((self.scalers_[0].transform(X) if self.scale else X) + self.beta*self._delta)
+                X = getattr(self, "_" + self.activation)(self._X_moved[-1])
+
+            if not self._fitted:
+                X = self.scalers_[i+1].fit_transform(X)
+            else:
+                X = self.scalers_[i+1].transform(X)
+
+            self._X_tr.append(X)
         else:
-            self._delta = np.dot(self._o[i], self.W[i])
-
-        if self.use_prev:
-            self._X_moved.append(X + self.beta*self._delta)
-            X = getattr(self, "_" + self.activation)(self._X_moved[-1])
-        else:
-            # TODO: fix performance
-            self._X_moved.append((self.scalers_[0].transform(X) if self.scale else X) + self.beta*self._delta)
-            X = getattr(self, "_" + self.activation)(self._X_moved[-1])
-
-        if not self._fitted:
-            X = self.scalers_[i+1].fit_transform(X)
-        else:
-            X = self.scalers_[i+1].transform(X)
-
-        self._X_tr.append(X)
-
-        if i == self.depth - 2:
             self._fitted = True
 
         return X
 
-    def fit(self, X, Y):
+    def fit(self, X, Y, W=None):
         self.K = len(set(Y)) # Class number
 
         # Seed
@@ -94,14 +95,14 @@ class R2SVMLearnerShort(BaseEstimator):
         else :
             self.models_ = [OneVsRestClassifier(self.base_cls().set_params(random_state=self.random_state), \
                                                 n_jobs=1) for _ in xrange(self.depth)]
-        self.W = [self.random_state.normal(size=(self.K, X.shape[1])) for _ in range(self.depth - 1)]
+        self.W = W if W else [self.random_state.normal(size=(self.K, X.shape[1])) for _ in range(self.depth - 1)]
 
         # Prepare data
         X = self.scalers_[0].fit_transform(np.copy(X))
         self._fitted = False
 
         # Fit
-        for i in xrange(self.depth - 1):
+        for i in xrange(self.depth):
             X = self._feed_forward(X, i, Y)
 
         self.X_moved = self._X_moved
@@ -113,7 +114,7 @@ class R2SVMLearnerShort(BaseEstimator):
 
     def predict(self, X):
         # Prepare data
-        X = self.scalers_[0].fit_transform(np.copy(X))
+        X = self.scalers_[0].transform(np.copy(X))
 
         # Predict
         for i in xrange(self.depth - 1):
