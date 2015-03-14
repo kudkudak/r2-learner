@@ -2,7 +2,7 @@ import sklearn
 from sklearn import datasets
 from matplotlib import pyplot as plt
 import numpy as np
-from models import R2SVMLearner
+import pickle
 from scipy.sparse import vstack
 import math
 import os
@@ -17,60 +17,102 @@ class Bunch(dict):
         self.__dict__ = self
 
 
-def fetch_uci_datasets(name=None):
+def fetch_uci_datasets(names=None):
     """Returns dict-like object (Bunch) contaning UCI datasets"""
 
-    iris = datasets.load_iris()
-    liver = datasets.fetch_mldata('liver-disorders')
-    segment = datasets.fetch_mldata('segment')
-    satimage = datasets.fetch_mldata('satimage')
-    wine = datasets.fetch_mldata('uci-20070111 wine')
-
-    iris.name = 'iris'
-    liver.name = 'liver'
-    segment.name = 'segment'
-    satimage.name = 'satimage'
-    wine.name = 'wine'
-
-
-    # Download heart from http://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary.html
-    # Dwonload glass.scale, aloi.scale and pendigits from http://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass.html
+    assert type(names) == list
     assert(os.path.exists(os.path.join(data_dir, 'heart')))
     assert(os.path.exists(os.path.join(data_dir, 'glass.scale')))
     assert(os.path.exists(os.path.join(data_dir, 'aloi.scale')))
     assert(os.path.exists(os.path.join(data_dir, 'pendigits')))
     assert(os.path.exists(os.path.join(data_dir, 'pendigits.t')))
+    assert(os.path.exists(os.path.join(data_dir, 'news20.scale')))
+    assert(os.path.exists(os.path.join(data_dir, 'news20.t.scale')))
+    assert(os.path.exists(os.path.join(data_dir, 'covtype.scale')))
+    assert(os.path.exists(os.path.join(data_dir, 'mnist.pkl')))
 
-    heart_x, heart_y = datasets.load_svmlight_file(os.path.join(data_dir, 'heart'))
-    heart_x = heart_x.toarray()
-    heart = Bunch(**{'name': 'heart', 'data': heart_x, 'target': heart_y, 'DESCR': 'libsvm heart data set'})
-
-    glass_x, glass_y = datasets.load_svmlight_file(os.path.join(data_dir, 'glass.scale'))
-    glass = Bunch(**{'name': 'glass', 'data': glass_x, 'target': glass_y, 'DESCR': 'libsvm glass.scale data set'})
-
-    aloi_x, aloi_y = datasets.load_svmlight_file(os.path.join(data_dir, 'aloi.scale'))
-    aloi = Bunch(**{'name': 'aloi', 'data': aloi_x, 'target': aloi_y, 'DESCR':'libsvm aloi.scale data set'})
-
-    pen_train_x, pen_train_y, pen_test_x, pen_test_y = datasets.load_svmlight_files((os.path.join(data_dir, 'pendigits'),
-                                                                                     os.path.join(data_dir, 'pendigits.t')))
-    pen_x = vstack([pen_train_x, pen_test_x])
-    pen_y = np.hstack([pen_train_y, pen_test_y])
-
-    pendigits = Bunch(**{'name': 'pendigits', 'data': pen_x, 'target': pen_y, 'DESC': 'linsvm pendigits dataset'})
-
-    uci_datasets = [iris, liver, segment, satimage, wine, heart, glass, aloi, pendigits]
+    uci_datasets = []
+    if 'iris' in names:
+        iris = datasets.load_iris()
+        iris.name = 'iris'
+        uci_datasets.append(iris)
+    if 'liver' in names:
+        liver = datasets.fetch_mldata('liver-disorders')
+        liver.name = 'liver'
+        uci_datasets.append(liver)
+    if 'segment' in names:
+        segment = datasets.fetch_mldata('segment')
+        segment.name = 'segment'
+        uci_datasets.append(segment)
+    if 'satimage' in names:
+        satimage = datasets.fetch_mldata('satimage')
+        satimage.name = 'satimage'
+        uci_datasets.append(satimage)
+    if 'wine' in names:
+        wine = datasets.fetch_mldata('uci-20070111 wine')
+        wine.name = 'wine'
+        uci_datasets.append(wine)
+    if 'heart' in names:
+        heart_x, heart_y = datasets.load_svmlight_file(os.path.join(data_dir, 'heart'))
+        heart_x = heart_x.toarray()
+        heart = Bunch(**{'name': 'heart', 'data': heart_x, 'target': heart_y, 'DESCR': 'libsvm heart data set'})
+        uci_datasets.append(heart)
+    if 'glass' in names:
+        glass_x, glass_y = datasets.load_svmlight_file(os.path.join(data_dir, 'glass.scale'))
+        glass = Bunch(**{'name': 'glass', 'data': glass_x, 'target': glass_y, 'DESCR': 'libsvm glass.scale data set'})
+        uci_datasets.append(glass)
+    if 'aloi' in names:
+        aloi_x, aloi_y = datasets.load_svmlight_file(os.path.join(data_dir, 'aloi.scale'))
+        aloi = Bunch(**{'name': 'aloi', 'data': aloi_x, 'target': aloi_y, 'DESCR':'libsvm aloi.scale data set'})
+        uci_datasets.append(aloi)
+    if 'pendigits' in names:
+        pen_train_x, pen_train_y, pen_test_x, pen_test_y = datasets.load_svmlight_files((os.path.join(data_dir, 'pendigits'),
+                                                                                         os.path.join(data_dir, 'pendigits.t')))
+        pen_x = vstack([pen_train_x, pen_test_x])
+        pen_y = np.hstack([pen_train_y, pen_test_y])
+        pendigits = Bunch(**{'name': 'pendigits', 'data': pen_x, 'target': pen_y, 'DESC': 'libsvm pendigits dataset'})
+        uci_datasets.append(pendigits)
+    if 'news20' in names:
+        news_train_x, news_train_y, news_test_x, news_test_y = datasets.load_svmlight_files((os.path.join(data_dir, 'news20.scale'),
+                                                                                         os.path.join(data_dir, 'news20.t.scale')))
+        news_x = vstack([news_train_x, news_test_x])
+        news_y = np.hstack([news_train_y, news_test_y])
+        news20 = Bunch(**{'name': 'news20', 'data': news_x, 'target': news_y, 'DESCR': 'libsvm scaled 20 news groups'})
+        uci_datasets.append(news20)
+    if 'covtype' in names:
+        covtype_x, covtype_y = datasets.load_svmlight_file(os.path.join(data_dir, 'covtype.scale'))
+        covtype = Bunch(**{'name': 'covtype', 'data': covtype_x, 'target': covtype_y, 'DESCR': 'libsvm covtype dataset'})
+        uci_datasets.append(covtype)
+    if 'mnist' in names:
+        f = open('../data/mnist.pkl')
+        train_set, valid_set, test_set = pickle.load(f)
+        f.close()
+        mnist_x = np.vstack([train_set[0], valid_set[0], test_set[0]])
+        mnist_y = np.hstack([train_set[1], valid_set[1], test_set[1]])
+        mnist = Bunch(**{'name': 'mnist', 'data': mnist_x, 'target': mnist_y})
+        uci_datasets.append(mnist)
 
     for dataset in uci_datasets :
         dataset.n_class = len(set(dataset.target))
         dataset.n_dim = dataset.data.shape[1]
 
-    uci_datasets_bunch = Bunch(**{d.name: d for d in uci_datasets})
-    if name is None :
-        return uci_datasets
-    elif type(name) is str :
-        return uci_datasets_bunch[name]
-    elif type(name) is list:
-        return [uci_datasets_bunch[n] for n in name]
+    return uci_datasets
+
+
+def fetch_small_datasets():
+    return fetch_uci_datasets(['iris', 'liver', 'heart', 'wine', 'glass'])
+
+
+def fetch_binray_datasets():
+    return fetch_uci_datasets(['liver', 'heart'])
+
+
+def fetch_large_datasets():
+    return fetch_uci_datasets(['mnist', 'news20', 'covtype', 'aloi'])
+
+
+def fetch_medium_datasets():
+    return fetch_uci_datasets(['segment', 'satimage', 'pendigits'])
 
 
 def fetch_synthetic_datasets():
