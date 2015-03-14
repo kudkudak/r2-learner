@@ -1,7 +1,9 @@
+import sys, os
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+
 from fit_models import fit_model_on_dataset, test_model_on_dataset
 from data_api import fetch_uci_datasets
 from misc.params import *
-import os
 from misc.config import c
 import cPickle
 import time
@@ -13,16 +15,18 @@ if __name__ == '__main__':
     small_datasets = fetch_uci_datasets(['iris', 'liver', 'heart'])
     medium_datasets = fetch_uci_datasets(['satimage', 'segment'])
 
-    models = ['r2svm', 'r2elm', 'elm+rbf', 'elm+sig', 'svm']
+    models = ['r2elm']
 
-    params = [r2svm_params, r2elm_params, elmrbf_params, elmsig_params, svmrbf_params]
+    params = [r2elm_params]
 
     zipped_params = zip(models, params)
 
     results = {d.name: {m: {} for m in models} for d in small_datasets}
 
     for data in small_datasets :
+	print("Running")
         for name, params in zipped_params:
+	    print("Running for " + name)
             config = {'model': params, 'grid': grid_config, 'fold': fold_config}
             E_grid, E_detailed = fit_model_on_dataset(name, data, config)
             file_name = name + '_' + data.name + '_' + str(time.time()) + '.exp'

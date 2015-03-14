@@ -22,8 +22,8 @@ r2svm_params = {'C': [np.exp(i) for i in xrange(-2,6)],
                 'use_prev': [True, False],
                 'seed': [seed]}
 
-r2elm_params = {'h': [i for i in xrange(20,201,10)],
-                'beta': [0.04 * i for i in xrange(1,6)],
+r2elm_params = {'h': [i for i in xrange(20,201,45)],
+                'beta': [0.04 * i for i in xrange(1,11)],
                 'fit_h': [None], # 'grid', 'random' or None
                 'depth': [i for i in xrange(1,11)],
                 'scale': [True, False],

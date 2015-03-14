@@ -1,3 +1,5 @@
+
+
 from models import R2ELMLearner
 from misc.experiment_utils import get_exp_logger
 from misc.params import grid_config, fold_config
@@ -31,7 +33,7 @@ def fit_r2elm_grid(data, config, logger=None):
     E = {"config": config, "results": results, "monitors": monitors}
 
     model = R2ELMLearner()
-    cv_grid = GridSearchCV(model, param_grid=config['param_grid'], scoring=config['scoring'], n_jobs=-1, cv=config['cv'])
+    cv_grid = GridSearchCV(model, param_grid=config['param_grid'], scoring=config['scoring'], n_jobs=14, cv=config['cv'], verbose=4)
 
     X = data.data
     Y = data.target

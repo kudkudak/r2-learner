@@ -1,4 +1,3 @@
-import sklearn
 import numpy as np
 
 from sklearn.cross_validation import KFold, cross_val_score
@@ -9,8 +8,7 @@ from sklearn.multiclass import OneVsRestClassifier
 from sklearn.base import BaseEstimator, clone
 
 from functools import partial
-from scipy import linalg as la
-from matplotlib import pyplot as plt
+from elm import ELM
 
 
 def _tanh(x):                      # these are needed for multiprocessing purposes
@@ -19,6 +17,8 @@ def _tanh(x):                      # these are needed for multiprocessing purpos
 def _sigmoid(x):
     return 1.0/(1.0 + np.exp(-x))
 
+def _rbf(x):
+    return np.exp(-np.power((x-np.mean(x, axis=0)),2))
 
 class R2SVMLearner(BaseEstimator):
     def __init__(self, C=1, activation='sigmoid', recurrent=True, depth=7,\
@@ -43,6 +43,9 @@ class R2SVMLearner(BaseEstimator):
         elif activation == 'sigmoid':
             # self.activation = lambda x: 1.0/(1.0 + np.exp(-x))
             self.activation = _sigmoid
+        elif activation == 'rbf':
+            # self.activation = lambda x: 1.0/(1.0 + np.exp(-x))
+            self.activation = _rbf
         else:
             self.activation = activation
 
@@ -69,6 +72,7 @@ class R2SVMLearner(BaseEstimator):
         delta = np.zeros(shape=X.shape)
         self.W = []
         self.X_tr = [X_mod]
+        self.X_moved = [X_mod]
 
         # Fit
         for i in xrange(self.depth):
@@ -115,7 +119,8 @@ class R2SVMLearner(BaseEstimator):
             if self.use_prev:
                 X_mod = self.activation(X_mod + self.beta*delta)
             else:
-                X_mod = self.activation((self.scalers_[0].transform(X) if self.scale else X) + self.beta*delta)
+                self.X_moved.append((self.scalers_[0].transform(X) if self.scale else X) + self.beta*delta)
+                X_mod = self.activation(self.X_moved[-1])
 
             self.X_tr.append(X_mod)
 
@@ -126,6 +131,9 @@ class R2SVMLearner(BaseEstimator):
         X_mod = X
         o = []
         delta = np.zeros(shape=X.shape)
+
+        self.X_tr = [X_mod]
+        self.X_moved = [X_mod]
 
         for i in xrange(self.depth-1):
             X_mod = self.scalers_[i].transform(X_mod) if self.scale else X_mod
@@ -143,9 +151,12 @@ class R2SVMLearner(BaseEstimator):
                 delta = np.dot(o[i], self.W[i])
 
             if not self.use_prev:
-                X_mod = self.activation((self.scalers_[0].transform(X) if self.scale else X) + self.beta*delta)
+                self.X_moved.append((self.scalers_[0].transform(X) if self.scale else X) + self.beta*delta)
+                X_mod = self.activation(self.X_moved[-1])
             else:
                 X_mod = self.activation(X_mod + self.beta*delta)
+
+            self.X_tr.append(X_mod)
 
         X_mod = self.scalers_[self.depth-1].transform(X_mod) if self.scale else X_mod
 
@@ -162,45 +173,9 @@ def _elm_sigmoid(X, W, B):
     return _sigmoid(X.dot(W) + B)
 
 
-class ELM(BaseEstimator):
-
-    def __init__(self, h=60, activation='linear', seed=None):
-        self.name = 'elm'
-        self.h = h
-        self.activation = activation
-        self.random_state = np.random.RandomState(seed) if seed is not None \
-            else np.random.RandomState(np.random.randint(0, np.iinfo(np.int32).max))
-
-        assert self.activation in ['rbf', 'sigmoid', 'linear']
-
-    def fit(self, X, y):
-        self.lb = LabelBinarizer()
-        self.W = self.random_state.normal(size=(X.shape[1], self.h))
-        self.B = self.random_state.normal(size=self.h)
-        if self.activation == 'rbf':
-            H = _elm_vectorized_rbf(X, self.W, self.B)
-        elif self.activation == 'sigmoid':
-            H = _elm_sigmoid(X, self.W, self.B)
-        else :
-            H = X.dot(self.W)
-        self.lb.fit(y)
-        self.beta = la.pinv(H).dot(self.lb.transform(y))
-        return self
-
-    def decision_function(self, X):
-        if self.activation == 'rbf':
-            return _elm_vectorized_rbf(X, self.W, self.B).dot(self.beta)
-        elif self.activation == 'sigmoid':
-            return _elm_sigmoid(X, self.W, self.B).dot(self.beta)
-        else :
-            return X.dot(self.W).dot(self.beta)
-
-    def predict(self, X):
-        return self.lb.inverse_transform(self.decision_function(X))
-
 
 class R2ELMLearner(BaseEstimator):
-    def __init__(self, h=60, activation='sigmoid', recurrent=True, depth=7,\
+    def __init__(self, h=60, activation='rbf', recurrent=True, depth=7,\
                  seed=None, beta=0.1, scale=False, use_prev = False, max_h=100,
                  fit_h=None):
         self.name = 'r2elm'
@@ -222,10 +197,14 @@ class R2ELMLearner(BaseEstimator):
 
         self.base_cls = partial(ELM, h=self.h, activation='linear', seed=self.seed)
 
-        if activation == 'tanh':
+	self.activation = activation
+
+	if activation == 'tanh':
             self.activation = _tanh
         elif activation == 'sigmoid':
             self.activation = _sigmoid
+        elif activation == 'rbf':
+	    self.activation = _rbf
         else:
             self.activation = activation
 
@@ -318,175 +297,3 @@ class R2ELMLearner(BaseEstimator):
 
         self.layer_predictions_.append(self.models_[-1].predict(X_mod))
         return self.models_[-1].predict(X_mod)
-
-
-
-### ======================================================== OLD ==================================================================
-
-class LinELM(BaseEstimator):
-
-    def __init__(self, h=60, random_state=None):
-        self.h = h
-        self.random_state = random_state if random_state is not None \
-            else np.random.RandomState(np.random.randint(0, np.iinfo(np.int32).max))
-
-    def fit(self, X, y):
-        self.b = LabelBinarizer()
-        self.W = self.random_state.normal(size=X.shape[1] * self.h).reshape(X.shape[1], self.h)
-        H = X.dot(self.W)
-        self.b.fit(y)
-        self.beta = la.pinv(H).dot(self.b.transform(y))
-
-    def decision_function(self, X):
-        return X.dot(self.W).dot(self.beta)
-
-    def predict(self, X):
-        return self.b.inverse_transform(self.decision_function(X))
-
-
-class R2Lin:
-
-    def __init__(self, k, estimator=partial(SVC, kernel='linear', C=1), recurrent=False, scale=False):
-        self.k = k
-        self.clf = estimator
-        self.recurrent = recurrent
-        self.activation = lambda x : 1.0 / (1.0 + np.exp(-x))
-#        self.activation = lambda x : 1.0/np.sqrt(2*np.pi) * np.exp( - (x)**2  )
-        self.alpha = 0.04
-        self.scale = scale
-
-    def fit(self, X, y):
-        self.Wi = []
-        self.clfs = []
-        self.scalers = []
-        self.C = len(set(y))
-        Xi = X
-        di = np.zeros(X.shape[0] * X.shape[1]).reshape(X.shape)
-        for i in range(self.k):
-
-            if self.C <= 2:
-            	clf = self.clf()
-            else :
-            	clf = OneVsRestClassifier(self.clf())
-            scaler = MinMaxScaler()
-            if self.scale:
-                Xi = scaler.fit_transform(Xi)
-            self.scalers.append(scaler)
-            clf.fit(Xi, y)
-            self.clfs.append(clf)
-            Oi = clf.decision_function(Xi)
-            if self.C == 2:
-                Oi = np.hstack([Oi,-Oi])
-            Wi = np.random.normal(size=X.shape[1] * self.C).reshape(self.C, X.shape[1])
-            self.Wi.append(Wi)
-
-            if self.recurrent:
-                di += Oi.dot(Wi)
-            else:
-                di = Oi.dot(Wi)
-            Xi = self.activation(X + self.alpha * di)
-        clf = self.clf()
-        scaler = MinMaxScaler()
-        if self.scale:
-            Xi = scaler.fit_transform(Xi)
-        self.scalers.append(scaler)
-        clf.fit(Xi, y)
-        self.clfs.append(clf)
-        self.Wi.append(None)
-        return self
-
-    def predict(self, X):
-        Xi = X
-        di = np.zeros(X.shape[0] * X.shape[1]).reshape(X.shape)
-        for clf, Wi, scaler in zip(self.clfs, self.Wi, self.scalers):
-
-            if self.scale:
-                Xi = scaler.transform(Xi)
-
-            if Wi is None:
-                return clf.predict(Xi)
-
-            Oi = clf.decision_function(Xi)
-            if self.C == 2:
-                Oi = np.hstack([Oi,-Oi])
-
-            if self.recurrent:
-                di += Oi.dot(Wi)
-            else:
-                di = Oi.dot(Wi)
-            Xi = self.activation(X + self.alpha * di)
-
-
-
-    def __str__(self):
-        return 'R2Lin' + str(self.clf) + ' ' + str(self.k)
-
-
-class R2SVM():
-
-    def __init__(self,l=2,C=1,beta=0.1):
-        self.beta = beta
-        self.layers = []
-        for i in xrange(l):
-            self.layers.append(SVC(C=C,kernel='linear',class_weight='auto'))
-
-    def sigmoid(self,x):
-        return 2/(1+np.exp(x)) - 1
-
-    def get_input(self, x, layer, o ):
-
-        if layer == 1: return x
-        else:
-            if o == None:
-                o = self.get_output(x, 1, None)
-                for previous in xrange(layer-2):
-                    o = np.concatenate((o,self.get_output(x, previous+2,o)),1)
-            move = ( np.array(o).dot( np.array(self.projections[layer-2])))
-            x_propagated = self.sigmoid(x+self.beta*move)
-
-        return x_propagated
-
-    def get_output(self, x, layer, o = None):
-        if layer != 1 and o == None:
-            o = self.get_output(x, 1, None)
-            for previous in xrange(layer-2):
-                o = np.concatenate((o,self.get_output(x, previous+2,o)),1)
-        inp = self.get_input(x, layer, o)
-        out = np.round( self.layers[layer-1].decision_function(inp),2)
-        if (1==out.shape[1]):
-            tmp_out = []
-            for x in out:
-                tmp_out.append([-x[0],x[0]])
-            out = tmp_out
-        return out
-
-    def fit(self,x,y):
-        classes = len(np.unique(y))
-        features = len(x[0])
-        self.projections = []
-        for i in xrange(len(self.layers)-1):
-            self.projections.append(np.random.normal(size=(classes*(i+1),features)))
-        for i in xrange(len(self.layers)):
-            if i==0:
-                self.layers[0].fit(x,y)
-                o = self.get_output(x, 1, None)
-                continue
-            self.layers[i].fit( self.get_input(x, i+1, o), y)
-            o = np.concatenate((o,self.get_output(x, i+1, o)),1)
-
-        return self
-
-    def classify_internal(self,x,layer):
-        return [np.argmax(p) for p in self.get_output( x, layer )]
-
-
-    def predict(self,x):
-        return self.classify_internal( x, len(self.layers) )
-
-    def drawdata(self, x, y):
-        _x = np.array(self.get_input(x,len(self.layers),None))
-        plt.scatter(_x[:,0].tolist(),_x[:,1].tolist(),c=y)
-        plt.show()
-
-    def score(self, X, Y):
-        return sklearn.metrics.accuracy_score(Y, self.predict(X))
