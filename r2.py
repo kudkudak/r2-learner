@@ -62,14 +62,14 @@ class R2Learner(BaseEstimator):
                 self._X_moved.append(X + self.beta*self._delta)
                 X = getattr(self, "_" + self.activation)(self._X_moved[-1])
             else:
-                # TODO: fix performance
-                self._X_moved.append((self.scalers_[0].transform(X) if self.scale else X) + self.beta*self._delta)
+                self._X_moved.append(self._X_tr[0] + self.beta*self._delta)
                 X = getattr(self, "_" + self.activation)(self._X_moved[-1])
 
-            if not self._fitted:
-                X = self.scalers_[i+1].fit_transform(X)
-            else:
-                X = self.scalers_[i+1].transform(X)
+            if self.scale:
+                if not self._fitted:
+                    X = self.scalers_[i+1].fit_transform(X)
+                else:
+                    X = self.scalers_[i+1].transform(X)
 
             self._X_tr.append(X)
         else:
@@ -89,7 +89,7 @@ class R2Learner(BaseEstimator):
         self.random_state = np.random.RandomState(self.seed)
 
         # Models and scalers
-        self.scalers_ = [MinMaxScaler((-1,1)) for _ in xrange(self.depth)]
+        self.scalers_ = [MinMaxScaler((-1, 1)) for _ in xrange(self.depth)]
         if self.K <= 2:
             self.models_ = [self.base_cls() for _ in xrange(self.depth)]
             for m in self.models_:
@@ -103,7 +103,8 @@ class R2Learner(BaseEstimator):
         self.W = W if W else [self.random_state.normal(size=(self.K, X.shape[1])) for _ in range(self.depth - 1)]
 
         # Prepare data
-        X = self.scalers_[0].fit_transform(np.copy(X))
+        if self.scale:
+            X = self.scalers_[0].fit_transform(np.copy(X))
         self._fitted = False
 
         # Fit
@@ -114,7 +115,8 @@ class R2Learner(BaseEstimator):
 
     def predict(self, X):
         # Prepare data
-        X = self.scalers_[0].transform(np.copy(X))
+        if self.scale:
+            X = self.scalers_[0].transform(np.copy(X))
 
         # Predict
         for i in xrange(self.depth - 1):
