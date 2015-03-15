@@ -1,7 +1,9 @@
 import numpy as np
+import scipy
+import sklearn
 
-from sklearn.svm import SVC
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.svm import SVC, LinearSVC
+from sklearn.preprocessing import MinMaxScaler, Normalizer, StandardScaler
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn.base import BaseEstimator
 
@@ -49,9 +51,8 @@ class R2Learner(BaseEstimator):
             self.models_[i].fit(X, Y)
 
         if i != self.depth - 1:
-
             self._o.append(self.models_[i].decision_function(X) if self.K > 2 else \
-            np.hstack([-self.models_[i].decision_function(X), self.models_[i].decision_function(X)]))
+                np.vstack([-self.models_[i].decision_function(X), self.models_[i].decision_function(X)]).T)
 
             if self.recurrent:
                 self._delta += np.dot(self._o[i], self.W[i])
@@ -89,22 +90,28 @@ class R2Learner(BaseEstimator):
         self.random_state = np.random.RandomState(self.seed)
 
         # Models and scalers
-        self.scalers_ = [MinMaxScaler((-1.2, 1.2)) for _ in xrange(self.depth)]
-        if self.K <= 2:
-            self.models_ = [self.base_cls() for _ in xrange(self.depth)]
-            for m in self.models_:
-                m.set_params(random_state=self.random_state)    # is this necessary?
-        else :
-            if self.is_base_multiclass:
-                self.models_ = [self.base_cls().set_params(random_state=self.random_state) for _ in xrange(self.depth)]
-            else:
-                self.models_ = [OneVsRestClassifier(self.base_cls().set_params(random_state=self.random_state), \
-                                                n_jobs=1) for _ in xrange(self.depth)]
+        if type(X) == np.ndarray:
+            self.scalers_ = [MinMaxScaler((-1.2, 1.2)) for _ in xrange(self.depth)]
+        elif type(X) == scipy.sparse.csr.csr_matrix:
+            self.scalers_ = [Normalizer(norm='l2') for _ in xrange(self.depth)]
+        else:
+            raise "Wrong data type, got:", type(X)
+
+        # if self.K <= 2:
+        self.models_ = [self.base_cls() for _ in xrange(self.depth)]
+        for m in self.models_:
+            m.set_params(random_state=self.random_state)    # is this necessary?
+        # else :
+        #     if self.is_base_multiclass:
+        #         self.models_ = [self.base_cls().set_params(random_state=self.random_state) for _ in xrange(self.depth)]
+        #     else:
+        #         self.models_ = [OneVsRestClassifier(self.base_cls().set_params(random_state=self.random_state), \
+        #                                         n_jobs=1) for _ in xrange(self.depth)]
         self.W = W if W else [self.random_state.normal(size=(self.K, X.shape[1])) for _ in range(self.depth - 1)]
 
         # Prepare data
         if self.scale:
-            X = self.scalers_[0].fit_transform(np.copy(X))
+            X = self.scalers_[0].fit_transform(X)
         self._fitted = False
 
         # Fit
@@ -116,7 +123,7 @@ class R2Learner(BaseEstimator):
     def predict(self, X):
         # Prepare data
         if self.scale:
-            X = self.scalers_[0].transform(np.copy(X))
+            X = self.scalers_[0].transform(X)
 
         # Predict
         for i in xrange(self.depth - 1):
@@ -159,7 +166,8 @@ class R2SVMLearner(R2Learner):
                  seed=None, beta=0.1, scale=False, use_prev=False, fit_c=None, C=1):
 
         if fit_c == None:
-            base_cls = partial(SVC, class_weight='auto', kernel='linear', C=C)
+            # base_cls = partial(SVC, class_weight='auto', kernel='linear', C=C)
+            base_cls = partial(LinearSVC, loss='l1', C=C, class_weight='auto')
         else:
             raise NotImplementedError()
 

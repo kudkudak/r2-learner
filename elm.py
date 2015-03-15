@@ -44,7 +44,7 @@ class ELM(BaseEstimator):
             H = X.dot(self.W)
 
         self.lb.fit(y)
-        self.beta = la.pinv(H).dot(self.lb.transform(y))
+        self.beta = np.linalg.lstsq(H,self.lb.transform(y))[0]
         return self
 
 
