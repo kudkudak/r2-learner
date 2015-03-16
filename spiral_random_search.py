@@ -40,7 +40,7 @@ def create_random_projector_2d_3():
 def test(p, X, Y):
 
     base_cls = partial(SVC, class_weight='auto', kernel='linear', C=1)
-    model = LMAO(depth=2, base_cls=base_cls, projectors=p, \
+    model = LMAO(depth=3, base_cls=base_cls, projectors=p, \
                  scale=True, activation='sigmoid')
     # model = R2SVMLearner(despth=19, beta=0.1, use_prev=True, scale=True, activation='sigmoid')
     model.fit(X, Y)
@@ -107,6 +107,6 @@ if __name__ == '__main__':
 			r = r.get(target)
 		except KeyboardInterrupt:
 			print "Parent interrupted by control-c"
-		p.terminate()
-		sys.exit()
+			p.terminate()
+			sys.exit()
 	print "Result ",num.value

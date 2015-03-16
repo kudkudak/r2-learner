@@ -52,7 +52,7 @@ class R2Learner(BaseEstimator):
 
         if i != self.depth - 1:
             self._o.append(self.models_[i].decision_function(X) if self.K > 2 else \
-                np.vstack([-self.models_[i].decision_function(X), self.models_[i].decision_function(X)]).T)
+                np.vstack([-self.models_[i].decision_function(X).reshape(1,-1), self.models_[i].decision_function(X).reshape(1,-1)]).T)
 
             if self.recurrent:
                 self._delta += np.dot(self._o[i], self.W[i])
@@ -97,16 +97,18 @@ class R2Learner(BaseEstimator):
         else:
             raise "Wrong data type, got:", type(X)
 
-        # if self.K <= 2:
-        self.models_ = [self.base_cls() for _ in xrange(self.depth)]
-        for m in self.models_:
-            m.set_params(random_state=self.random_state)    # is this necessary?
+        if self.K <= 2:
+            self.models_ = [self.base_cls() for _ in xrange(self.depth)]
+        #for m in self.models_:
+        #    m.set_params(random_state=self.random_state)    # is this necessary?
         # else :
-        #     if self.is_base_multiclass:
-        #         self.models_ = [self.base_cls().set_params(random_state=self.random_state) for _ in xrange(self.depth)]
-        #     else:
-        #         self.models_ = [OneVsRestClassifier(self.base_cls().set_params(random_state=self.random_state), \
-        #                                         n_jobs=1) for _ in xrange(self.depth)]
+        else:
+             if self.is_base_multiclass:
+                 self.models_ = [self.base_cls().set_params(random_state=self.random_state) for _ in xrange(self.depth)]
+             else:
+                 self.models_ = [OneVsRestClassifier(self.base_cls().set_params(random_state=self.random_state), \
+                                            n_jobs=1) for _ in xrange(self.depth)]
+        
         self.W = W if W else [self.random_state.normal(size=(self.K, X.shape[1])) for _ in range(self.depth - 1)]
 
         # Prepare data
@@ -126,7 +128,7 @@ class R2Learner(BaseEstimator):
             X = self.scalers_[0].transform(X)
 
         # Predict
-        for i in xrange(self.depth - 1):
+        for i in xrange(self.depth):
             X = self._feed_forward(X, i)
 
         return self.models_[-1].predict(X)
@@ -148,9 +150,8 @@ class R2ELMLearner(R2Learner):
     def __init__(self, activation='sigmoid', recurrent=True, depth=7,\
                  seed=None, beta=0.1, scale=False, use_prev=False, max_h=100, h=10,
                  fit_h=None):
-
-	self.h = h
-	self.max_h = max_h
+        self.h = h
+        self.max_h = max_h
 
         if fit_h == None:
             base_cls = partial(ELM, h=self.h, activation='linear')
@@ -163,14 +164,23 @@ class R2ELMLearner(R2Learner):
 
 class R2SVMLearner(R2Learner):
     def __init__(self, activation='sigmoid', recurrent=True, depth=7,\
-                 seed=None, beta=0.1, scale=False, use_prev=False, fit_c=None, C=1):
+                 seed=None, beta=0.1, scale=False, use_prev=False, fit_c=None, C=1, use_linear_svc=False):
 
-        if fit_c == None:
-            # base_cls = partial(SVC, class_weight='auto', kernel='linear', C=C)
-            base_cls = partial(LinearSVC, loss='l1', C=C, class_weight='auto')
-        else:
-            raise NotImplementedError()
+		if not use_linear_svc:
+		    if fit_c == None:
+		        base_cls = partial(SVC, class_weight='auto', kernel='linear', C=C)
+		    else:
+		        raise NotImplementedError()
 
 
-        R2Learner.__init__(self, activation=activation, recurrent=recurrent, depth=depth,\
-                 seed=seed, beta=beta, scale=scale, use_prev=use_prev, base_cls=base_cls, is_base_multiclass=False)
+		    R2Learner.__init__(self, activation=activation, recurrent=recurrent, depth=depth,\
+		             seed=seed, beta=beta, scale=scale, use_prev=use_prev, base_cls=base_cls, is_base_multiclass=False)
+		else:
+		    if fit_c == None:
+		        base_cls = partial(LinearSVC, loss='l1', C=C, class_weight='auto')
+		    else:
+		        raise NotImplementedError()
+
+
+		    R2Learner.__init__(self, activation=activation, recurrent=recurrent, depth=depth,\
+		             seed=seed, beta=beta, scale=scale, use_prev=use_prev, base_cls=base_cls, is_base_multiclass=True)			
