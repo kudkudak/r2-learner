@@ -85,7 +85,7 @@ def fetch_uci_datasets(names=None):
         covtype = Bunch(**{'name': 'covtype', 'data': covtype_x, 'target': covtype_y, 'DESCR': 'libsvm covtype dataset'})
         uci_datasets.append(covtype)
     if 'mnist' in names:
-        f = open('../data/mnist.pkl')
+        f = open(os.path.join(data_dir, 'mnist.pkl'))
         train_set, valid_set, test_set = pickle.load(f)
         f.close()
         mnist_x = np.vstack([train_set[0], valid_set[0], test_set[0]])

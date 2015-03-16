@@ -5,7 +5,7 @@ from scipy import linalg as la
 
 def _elm_vectorized_rbf(X, W, B):
     WS = np.array([np.sum(np.multiply(W,W), axis=0)])
-    XS = np.array([np.sum(np.multiply(X,X), axis=1)]).T
+    XS = np.array([np.sum(np.multiply(X,X), axis=1)]).T[0,:]
     return np.exp(-np.multiply(B, -2*X.dot(W) + WS + XS))
 
 
@@ -48,8 +48,10 @@ class ELM(BaseEstimator):
             H = X.dot(self.W)
 
         self.lb.fit(y)
+
         H_inv = np.linalg.inv(H.T.dot(H) + np.ones(shape=(H.shape[1], H.shape[1])) * self.lam)
         self.beta = H_inv.dot(H.T.dot(self.lb.transform(y)))
+
         return self
 
 

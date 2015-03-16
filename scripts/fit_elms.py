@@ -20,17 +20,17 @@ def main():
     exp_name = 'rbfELM_grid_' + type + str(datetime.now().time())[:-7]
 
     rbf_params = {'h': [i for i in xrange(20, 101, 10)],
-                     'activation' : ['rbf'],
-                     'random_state': [666]}
+                  'activation' : ['rbf'],
+                  'random_state': [666]}
 
-    datasets = fetch_uci_datasets(['liver', 'iris', 'heart'])
+    datasets = fetch_uci_datasets(['liver'])
     model = ELM()
     logger = get_logger(exp_name, to_file=False)
     results = {d.name: {} for d in datasets}
     monitors = {d.name: {} for d in datasets}
 
     for data in datasets:
-        exp = grid_search(model, data, rbf_params, logger=logger, verbose=0)
+        exp = grid_search(model, data, rbf_params, logger=logger, verbose=1)
         results[data.name] = exp['results']
         monitors[data.name] = exp['monitors']
         results[data.name].update(monitors[data.name])
@@ -54,7 +54,7 @@ def main():
     monitors = {d.name: {} for d in datasets}
 
     for data in datasets:
-        exp = grid_search(model, data, sig_params, logger=logger, verbose=3)
+        exp = grid_search(model, data, sig_params, logger=logger, verbose=1)
         results[data.name] = exp['results']
         monitors[data.name] = exp['monitors']
         results[data.name].update(monitors[data.name])
