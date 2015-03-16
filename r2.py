@@ -55,14 +55,18 @@ class R2Learner(BaseEstimator):
                 best_C = None
                 best_score = 0.
                 fit_size = 7
-                c = np.random.uniform(size=fit_size)
-                c = MinMaxScaler((-2, 10)).fit_transform(c)
-                c = [np.exp(x) for x in c]
-                # Add one and previous
-                c = list(set(c).union([1]).union([self._prev_C])) if self._prev_C else list(set(c).union([1]))
+                if type(self.base_cls) == ELM :
+                    c = [10^i for i in xrange(0,fit_size)]
+                else :
+                    c = np.random.uniform(size=fit_size)
+                    c = MinMaxScaler((-2, 10)).fit_transform(c)
+                    c = [np.exp(x) for x in c]
+                    # Add one and previous
+                    c = list(set(c).union([1]).union([self._prev_C])) if self._prev_C else list(set(c).union([1]))
 
                 for j in xrange(fit_size):
-                    model = clone(self.models_[i]).set_params(estimator__C=c[j]) if self.K > 2 else \
+                    model = clone(self.models_[i]).set_params(estimator__C=c[j]) if not self.is_base_multiclass \
+                                                                                    and self.K > 2 else \
                         clone(self.models_[i]).set_params(C=c[j])
                     scores = cross_val_score(model, X, Y, scoring='accuracy', \
                                              cv=KFold(X.shape[0], shuffle=True, random_state=self.random_state))
@@ -71,7 +75,8 @@ class R2Learner(BaseEstimator):
                         best_score = score
                         best_C = c[j]
                 assert best_C is not None
-                self.models_[i].set_params(estimator__C=best_C) if self.K > 2 else self.models_[i].set_params(C=best_C)
+                self.models_[i].set_params(estimator__C=best_C) if not self.is_base_multiclass and self.K > 2\
+                    else self.models_[i].set_params(C=best_C)
                 self._prev_C = best_C
                 self.models_[i].fit(X, Y)
 
@@ -174,24 +179,24 @@ class R2Learner(BaseEstimator):
 
 class R2ELMLearner(R2Learner):
     def __init__(self, activation='sigmoid', recurrent=True, depth=7, \
-                 seed=None, beta=0.1, scale=False, use_prev=False, max_h=100, h=10,
-                 fit_h=None):
+                 seed=None, beta=0.1, scale=False, fit_c=None, use_prev=False, max_h=100, h=10,
+                 fit_h=None, C=100):
         self.h = h
         self.max_h = max_h
 
         if fit_h == None:
-            base_cls = partial(ELM, h=self.h, activation='linear')
+            base_cls = partial(ELM, h=self.h, activation='linear', C=C)
         else:
             raise NotImplementedError()
 
         R2Learner.__init__(self, activation=activation, recurrent=recurrent, depth=depth, \
                            seed=seed, beta=beta, scale=scale, use_prev=use_prev, base_cls=base_cls,
-                           is_base_multiclass=True)
+                           is_base_multiclass=True, fit_c=fit_c, C=C)
 
 
 class R2SVMLearner(R2Learner):
     def __init__(self, activation='sigmoid', recurrent=True, depth=7, \
-                 seed=None, beta=0.1, scale=False, use_prev=False, fit_c=None, C=1, use_linear_svc=False):
+                 seed=None, beta=0.1, scale=False, use_prev=False, fit_c=None, C=1, use_linear_svc=True):
 
         if not use_linear_svc:
             base_cls = partial(SVC, class_weight='auto', kernel='linear', C=C)

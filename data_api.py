@@ -116,6 +116,11 @@ def fetch_medium_datasets():
     return fetch_uci_datasets(['segment', 'satimage', 'pendigits'])
 
 
+def fetch_all_datasets(): # for when shit gets real
+    return fetch_uci_datasets(['iris', 'liver', 'heart', 'wine', 'glass', 'segment', 'satimage', \
+                               'pendigits', 'mnist', 'news20', 'covtype', 'aloi'])
+
+
 def fetch_synthetic_datasets():
     """Returns dict-like object (Bunch) contaning synthetic datasets"""
 

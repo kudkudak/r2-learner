@@ -14,7 +14,8 @@ from misc.config import c
 
 def main():
 
-    type = 'small_' # small, medium, large
+    save = False
+    type = 'small_' # small, medium, large, all
     exp_name = 'R2SVM_grid_' + type + str(datetime.now().time())[:-7]
 
     params = {'C': [np.exp(i) for i in xrange(-2, 6)],
@@ -41,11 +42,11 @@ def main():
         results[data.name].update(monitors[data.name])
         print data.name + " done!"
 
-    ret = pd.DataFrame.from_dict(results)
-
-    f = open(os.path.join(c["RESULTS_DIR"],exp_name + '.pkl'), 'wb')
-    pickle.dump(ret, f)
-    f.close()
+    if save:
+        ret = pd.DataFrame.from_dict(results)
+        f = open(os.path.join(c["RESULTS_DIR"],exp_name + '.pkl'), 'wb')
+        pickle.dump(ret, f)
+        f.close()
 
 if __name__ == '__main__':
     main()

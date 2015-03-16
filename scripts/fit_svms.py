@@ -1,5 +1,6 @@
-import pandas as pd
-import os
+import sys, os
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+
 import pickle
 import numpy as np
 from fit_models import grid_search
@@ -8,9 +9,11 @@ from datetime import datetime
 from data_api import fetch_small_datasets
 from misc.experiment_utils import get_logger
 from misc.config import c
+import pandas as pd
 
 def main():
 
+    save = False
     type = 'small_' # small, medium, large
     exp_name = 'rbfSVM_grid_' + type + str(datetime.now().time())[:-7]
 
@@ -32,11 +35,11 @@ def main():
         results[data.name].update(monitors[data.name])
         print data.name + " done!"
 
-    ret = pd.DataFrame.from_dict(results)
-
-    f = open(os.path.join(c["RESULTS_DIR"],exp_name + '.pkl'), 'wb')
-    pickle.dump(ret, f)
-    f.close()
+    if save:
+        ret = pd.DataFrame.from_dict(results)
+        f = open(os.path.join(c["RESULTS_DIR"],exp_name + '.pkl'), 'wb')
+        pickle.dump(ret, f)
+        f.close()
 
 if __name__ == '__main__':
     main()

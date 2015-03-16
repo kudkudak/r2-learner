@@ -15,26 +15,21 @@ def _elm_sigmoid(X, W, B):
 
 class ELM(BaseEstimator):
 
-    def __init__(self, h=60, activation='linear', random_state=None, C=1):
+    def __init__(self, h=60, activation='linear', random_state=None, C=100):
         self.name = 'elm'
         self.h = h
         self.activation = activation
-        self.seed = random_state
-        if C is None :
-            self.lam = 0.01
-        else:
-            self.lam = 1. / C
+        self.random_state = random_state
+        self.C = C
 
         assert self.activation in ['rbf', 'sigmoid', 'linear']
 
     def fit(self, X, y):
 
-        if self.seed is None:
+        if self.random_state is None:
             self.random_state = np.random.RandomState(np.random.randint(0, np.iinfo(np.int32).max))
-        elif type(self.seed) == int:
-            self.random_state = np.random.RandomState(self.seed)
-        elif type(self.seed) == np.random.RandomState:
-            self.random_state = self.seed
+        elif type(self.random_state) == int:
+            self.random_state = np.random.RandomState(self.random_state)
 
         self.lb = LabelBinarizer()
         self.W = self.random_state.normal(size=(X.shape[1], self.h))
@@ -49,7 +44,8 @@ class ELM(BaseEstimator):
 
         self.lb.fit(y)
 
-        H_inv = np.linalg.inv(H.T.dot(H) + np.ones(shape=(H.shape[1], H.shape[1])) * self.lam)
+        lam = np.eye(H.shape[1]) * (1./self.C)
+        H_inv = np.linalg.inv(H.T.dot(H) + lam)
         self.beta = H_inv.dot(H.T.dot(self.lb.transform(y)))
 
         return self

@@ -16,6 +16,7 @@ from misc.config import c
 def main():
 
     # RBF
+    save = False
     type = 'small_' # small, medium, large
     exp_name = 'rbfELM_grid_' + type + str(datetime.now().time())[:-7]
 
@@ -36,11 +37,11 @@ def main():
         results[data.name].update(monitors[data.name])
         print data.name + " done!"
 
-    ret = pd.DataFrame.from_dict(results)
-
-    # f = open(os.path.join(c["RESULTS_DIR"],exp_name + '.pkl'), 'wb')
-    # pickle.dump(results, f)
-    # f.close()
+    if save:
+        ret = pd.DataFrame.from_dict(results)
+        f = open(os.path.join(c["RESULTS_DIR"],exp_name + '.pkl'), 'wb')
+        pickle.dump(ret, f)
+        f.close()
 
     # SIG
     exp_name = 'sigELM_grid_' + str(datetime.now().time())[:-7]
@@ -60,11 +61,11 @@ def main():
         results[data.name].update(monitors[data.name])
         print data.name + " done!"
 
-    ret = pd.DataFrame.from_dict(results)
-
-    # f = open(os.path.join(c["RESULTS_DIR"],exp_name + '.pkl'), 'wb')
-    # pickle.dump(ret, f)
-    # f.close()
+    if save:
+        ret = pd.DataFrame.from_dict(results)
+        f = open(os.path.join(c["RESULTS_DIR"],exp_name + '.pkl'), 'wb')
+        pickle.dump(ret, f)
+        f.close()
 
 if __name__ == '__main__':
     main()
