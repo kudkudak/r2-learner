@@ -25,7 +25,7 @@ def main():
     monitors = {d.name: {} for d in datasets}
 
     for data in datasets:
-        exp = grid_search(model, data, params, logger=logger, verbose=3)
+        exp = grid_search(model, data, params, logger=logger, verbose=1)
         results[data.name] = exp['results']
         monitors[data.name] = exp['monitors']
         results[data.name].update(monitors[data.name])
