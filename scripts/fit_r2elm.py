@@ -12,7 +12,8 @@ from misc.config import c
 
 def main():
 
-    exp_name = 'R2ELM_grid_' + str(datetime.now().time())[:-7]
+    type = 'small_' # small, medium, large
+    exp_name = 'R2ELM_grid_' + type + str(datetime.now().time())[:-7]
 
     params = {'h': [i for i in xrange(20,101,20)],
               'beta': [0.05 * i for i in xrange(1,5)],

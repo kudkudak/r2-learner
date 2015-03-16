@@ -16,7 +16,8 @@ from misc.config import c
 def main():
 
     # RBF
-    exp_name = 'rbfELM_grid_' + str(datetime.now().time())[:-7]
+    type = 'small_' # small, medium, large
+    exp_name = 'rbfELM_grid_' + type + str(datetime.now().time())[:-7]
 
     rbf_params = {'h': [i for i in xrange(20, 101, 10)],
                      'activation' : ['rbf'],

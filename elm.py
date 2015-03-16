@@ -15,11 +15,15 @@ def _elm_sigmoid(X, W, B):
 
 class ELM(BaseEstimator):
 
-    def __init__(self, h=60, activation='linear', random_state=None):
+    def __init__(self, h=60, activation='linear', random_state=None, C=1):
         self.name = 'elm'
         self.h = h
         self.activation = activation
         self.seed = random_state
+        if C is None :
+            self.lam = 0.01
+        else:
+            self.lam = 1. / C
 
         assert self.activation in ['rbf', 'sigmoid', 'linear']
 
@@ -44,7 +48,8 @@ class ELM(BaseEstimator):
             H = X.dot(self.W)
 
         self.lb.fit(y)
-        self.beta = la.pinv(H).dot(self.lb.transform(y))
+        H_inv = np.linalg.inv(H.T.dot(H) + np.ones(shape=(H.shape[1], H.shape[1])) * self.lam)
+        self.beta = H_inv.dot(H.T.dot(self.lb.transform(y)))
         return self
 
 

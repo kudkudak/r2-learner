@@ -11,7 +11,8 @@ from misc.config import c
 
 def main():
 
-    exp_name = 'rbfSVM_grid_' + str(datetime.now().time())[:-7]
+    type = 'small_' # small, medium, large
+    exp_name = 'rbfSVM_grid_' + type + str(datetime.now().time())[:-7]
 
     params = {'C': [np.exp(i) for i in xrange(-2,6)],
               'kernel': ['rbf'],
