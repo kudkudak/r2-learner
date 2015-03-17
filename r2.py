@@ -55,8 +55,8 @@ class R2Learner(BaseEstimator):
                 best_C = None
                 best_score = 0.
                 fit_size = 7
-                if type(self.base_cls) == ELM :
-                    c = [10^i for i in xrange(0,fit_size)]
+                if type(self.base_cls) == ELM:
+                    c = [10**i for i in xrange(0, fit_size)]
                 else :
                     c = np.random.uniform(size=fit_size)
                     c = MinMaxScaler((-2, 10)).fit_transform(c)
@@ -153,16 +153,22 @@ class R2Learner(BaseEstimator):
 
         return self
 
-    def predict(self, X):
+    def predict(self, X, all_layers=False):
         # Prepare data
         if self.scale:
             X = self.scalers_[0].transform(X)
-
+		
+        _X = [X]
         # Predict
         for i in xrange(self.depth):
             X = self._feed_forward(X, i)
-
-        return self.models_[-1].predict(X)
+            if all_layers and i != self.depth-1: # Last layer is  
+                _X.append(X)
+		
+        if all_layers:
+            return [m.predict(X_tr) for m, X_tr in zip(self.models_, _X)]
+        else:
+            return self.models_[-1].predict(X)
 
     @staticmethod
     def _tanh(x):
@@ -175,6 +181,14 @@ class R2Learner(BaseEstimator):
     @staticmethod
     def _rbf(x):
         return np.exp(-np.power((x - np.mean(x, axis=0)), 2))
+
+
+def score_all_depths_r2(model, X, Y):
+    """
+    @returns depth, score_for_this_depth
+    """
+    scores = [sklearn.metrics.accuracy_score(Y_pred, Y) for Y_pred in model.predict(X, all_layers=True)]
+    return np.argmax(scores)+1, scores[np.argmax(scores)]
 
 
 class R2ELMLearner(R2Learner):
