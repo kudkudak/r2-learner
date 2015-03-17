@@ -1,6 +1,6 @@
 #!/bin/bash
 
-declare -a datasets=("iris" "liver" "heart" "wine")
+declare -a datasets=("glass" "iris" "liver" "heart" "wine")
 
 for data in "${datasets[@]}"
 do

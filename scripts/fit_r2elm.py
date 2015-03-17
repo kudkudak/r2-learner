@@ -26,10 +26,8 @@ def main():
 
     params = {'h': [i for i in xrange(20,101,20)],
               'beta': [0.05 * i for i in xrange(1,5)],
-              'fit_h': [None], # 'grid', 'random' or None
               'fit_c': ['random'],
               'C': [100],
-              'depth': [i for i in xrange(2,10,3)],
               'scale': [False],
               'recurrent': [True],
               'use_prev': [False],

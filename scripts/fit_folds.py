@@ -19,36 +19,35 @@ else :
     dataset = 'iris'
 
 params = {'C': [np.exp(i) for i in xrange(-2, 6)],
-          'beta': [0.05 * i for i in xrange(1, 5)],
-          'depth': [i for i in xrange(2,10,3)],
-          'fit_c': ['random'],
-          'activation': ['sigmoid'],
-          'scale': [True, False], #[True, False],
+          'beta': [0.1, 0.5, 1.0, 1.5, 2.0],
+          'fit_c': ['random'],              # SINGLE
+          'activation': ['sigmoid'],        # SINGLE
+          'scale': [True, False],
           'recurrent': [True, False],
           'use_prev': [True, False],
-          'seed': [666]}
+          'seed': [666]}                    # SINGLE
 
 data = fetch_uci_datasets([dataset])[0]
-
 model = R2SVMLearner()
-
-
 param_list = ParameterGrid(params)
+exp_name = 'test'
 
 def gen_params():
     for i, param in enumerate(param_list):
-        yield {'model': model, 'params': param, 'data': data, 'i': i, 'len': len(param_list)}
+        yield {'model': model, 'params': param, 'data': data, 'name': exp_name}
 
 params = list(gen_params())
 
 def run(p):
-    k_fold(base_model=p['model'], params=p['params'], data=p['data'])
-
+    k_fold(base_model=p['model'], params=p['params'], data=p['data'], exp_name=p['name'])
+#
+# for p in params:
+#     run(p)
 
 p = Pool(n_jobs)
 rs = p.map_async(run, params)
 while True :
     if (rs.ready()): break
     remaining = rs._number_left
-    print "Waiting for", remaining, "tasks to complete..."
+    print "Waiting for", remaining, "tasks to complete on", data.name
     time.sleep(10)

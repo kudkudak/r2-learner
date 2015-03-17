@@ -18,16 +18,21 @@ def get_logger(name, to_file=False):
         logger.addHandler(ch_file)
     return logger
 
-def get_exp_logger(config, to_file=False):
+def get_exp_logger(config, dir_name, to_file=False, to_std=True):
+    assert to_file != to_std
     name = config["experiment_name"]
     logger = logging.Logger(name=name, level=logging.INFO)
-    ch = logging.StreamHandler()
     formatter = logging.Formatter("%(asctime)s \t" + name + "  %(message)s")
-    ch.setFormatter(formatter)
-    logger.addHandler(ch)
+    if to_std:
+        ch = logging.StreamHandler()
+        ch.setFormatter(formatter)
+        logger.addHandler(ch)
     if to_file:
+        directory = os.path.join(c["LOG_DIR"], dir_name)
+        if not os.path.isdir(directory):
+            os.makedirs(directory)
         logger.propagate = False
-        ch_file = logging.FileHandler(os.path.join(c["LOG_DIR"],name + ".log"))
+        ch_file = logging.FileHandler(os.path.join(directory, name + ".log"))
         ch_file.setLevel(level=logging.INFO)
         ch_file.setFormatter(formatter)
         logger.addHandler(ch_file)
@@ -91,5 +96,26 @@ def exp_done(E):
     return os.path.exist(get_exp_fname(E))
 
 
-def save_exp(E):
-    cPickle.dump(E, open(os.path.join(c["RESULTS_DIR"], get_exp_fname(E)), "w"))
+def save_exp(E, dir_name):
+    directory = os.path.join(c["RESULTS_DIR"], dir_name)
+    if not os.path.isdir(directory):
+        os.makedirs(directory)
+    cPickle.dump(E, open(os.path.join(directory, get_exp_fname(E)), "w"))
+
+def shorten_params(params):
+    short_params = ""
+    for k, v in params.iteritems():
+        if k in ['C', 'beta', 'h', 'scale', 'recurrent', 'use_prev']:
+            short_params += str(k)[0]
+            if type(v) == float:
+                short_params += "%2.2f" % v
+            elif type(v) == int:
+                short_params += str(int)
+            elif type(v) == bool:
+                if v: short_params += 'T'
+                else: short_params += 'F'
+            else:
+                short_params += str(v)
+            short_params += '_'
+
+    return short_params

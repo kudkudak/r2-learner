@@ -13,6 +13,41 @@ from elm import ELM
 from sklearn.base import BaseEstimator, clone
 
 
+class MyLinModel(BaseEstimator):
+    def __init__(self,w,b):
+        self.w=w
+        self.b=b
+    
+    def fit(self, X, Y):
+        pass
+    
+    def predict(self, X):
+        return (np.dot(X, self.w.T) + self.b)>=0
+
+    def decision_function(self, X):
+        return np.dot(X, self.w.T) + self.b
+
+def make_rand_vector(dims):
+    vec = [np.random.normal(0, 1) for i in range(dims)]
+    mag = sum(x**2 for x in vec) ** .5
+    return np.array([[x/mag for x in vec]])
+
+
+def _r2_compress_model(r2):
+    """
+    If models are LinearMixins <=> have coefs_ and coef0_ it rewrites to dicts (nope, idk why)//those to MyLinModel. It is still functional model :)
+    """
+    # #
+    #MyLinModel(r2.models_[id].coef_, r2.models_[id].intercept_)
+    for id, m in enumerate(r2.models_):
+        # I know it should be class testing ok?
+        if hasattr(r2.models_[id], 'coef_'):
+            if hasattr(r2.models_[id], 'intercept_'):
+                r2.models_[id] = {"w": r2.models_[id].coef_, "b":  r2.models_[id].intercept_, "params": r2.models_[id].get_params()} 
+            elif hasattr(r2.models_[id], 'coef0'):
+                r2.models_[id] = {"w": r2.models_[id].coef_, "b":  r2.models_[id].coef0, "params": r2.models_[id].get_params()}
+    return r2
+
 class R2Learner(BaseEstimator):
     def __init__(self, C=1, activation='sigmoid', recurrent=True, depth=7, \
                  seed=None, beta=0.1, scale=False, use_prev=False, fit_c=None, base_cls=None, 
@@ -42,6 +77,7 @@ class R2Learner(BaseEstimator):
         self._X_tr = []
         self._prev_C = None
 
+            
     def _feed_forward(self, X, i, Y=None):
         # Modifies state (_o, _delta, _fitted, _X_tr, _X_moved)
         # Assumes scaled data passed to it (so you have to scale data)
@@ -52,10 +88,14 @@ class R2Learner(BaseEstimator):
             self._X_tr = [X]
             self._X_moved = [X]
 
-        # Always fit last layer
         if not self._fitted:
             if self.fit_c is None:
                 self.models_[i].fit(X, Y)
+            elif self.fit_c is 'random_cls':
+                if i != self.depth - 1:
+                    self.models_[i] = MyLinModel(make_rand_vector(X.shape[1]), np.random.uniform(X.min(), X.max()))
+                else:
+                    self.models_[i].fit(X, Y)
             elif self.fit_c == 'random':
                 best_C = None
                 best_score = 0.
@@ -91,8 +131,10 @@ class R2Learner(BaseEstimator):
                 self._o.append(self.models_[i].decision_function(X) if self.K > 2 else \
 		                           np.vstack([-self.models_[i].decision_function(X).reshape(1, -1),
 		                                      self.models_[i].decision_function(X).reshape(1, -1)]).T)
-            else: 
+            elif isinstance(self.fixed_prediction, (int, long, float, complex)): 
                 self._o.append(np.ones(shape=(X.shape[0], self.K)) * self.fixed_prediction)
+            else:
+                raise NotImplementedError("self.fixed_prediction is wut?")
 
             if self.recurrent:
                 self._delta += np.dot(self._o[i], self.W[i])
@@ -201,7 +243,7 @@ def score_all_depths_r2(model, X, Y):
 
 
 class R2ELMLearner(R2Learner):
-    def __init__(self, activation='sigmoid', recurrent=True, depth=7, \
+    def __init__(self, activation='sigmoid', recurrent=True, depth=10, \
                  seed=None, beta=0.1, scale=False, fit_c=None, use_prev=False, max_h=100, h=10,
                  fit_h=None, C=100, fixed_prediction=False):
         """
@@ -221,7 +263,7 @@ class R2ELMLearner(R2Learner):
 
 
 class R2SVMLearner(R2Learner):
-    def __init__(self, activation='sigmoid', recurrent=True, depth=7, \
+    def __init__(self, activation='sigmoid', recurrent=True, depth=10, \
                  seed=None, beta=0.1, scale=False, fixed_prediction=False, use_prev=False, fit_c=None, C=1, use_linear_svc=True):
         """
         @param fixed_prediction pass float to fix prediction to this number or pass False to learn model
