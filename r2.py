@@ -1,6 +1,7 @@
 import numpy as np
 import scipy
 
+import sklearn
 from sklearn.svm import SVC, LinearSVC
 from sklearn.preprocessing import MinMaxScaler, Normalizer, StandardScaler
 from sklearn.multiclass import OneVsRestClassifier
@@ -14,8 +15,11 @@ from sklearn.base import BaseEstimator, clone
 
 class R2Learner(BaseEstimator):
     def __init__(self, C=1, activation='sigmoid', recurrent=True, depth=7, \
-                 seed=None, beta=0.1, scale=False, use_prev=False, fit_c=None, base_cls=None, is_base_multiclass=False):
+                 seed=None, beta=0.1, scale=False, use_prev=False, fit_c=None, base_cls=None, 
+				fixed_prediction=False,
+				is_base_multiclass=False):
         self.name = 'r2svm'
+        self.fixed_prediction = fixed_prediction
         self.use_prev = use_prev
         self.fit_c = fit_c
         self.depth = depth
@@ -48,6 +52,7 @@ class R2Learner(BaseEstimator):
             self._X_tr = [X]
             self._X_moved = [X]
 
+        # Always fit last layer
         if not self._fitted:
             if self.fit_c is None:
                 self.models_[i].fit(X, Y)
@@ -81,9 +86,13 @@ class R2Learner(BaseEstimator):
                 self.models_[i].fit(X, Y)
 
         if i != self.depth - 1:
-            self._o.append(self.models_[i].decision_function(X) if self.K > 2 else \
-                               np.vstack([-self.models_[i].decision_function(X).reshape(1, -1),
-                                          self.models_[i].decision_function(X).reshape(1, -1)]).T)
+            
+            if not self.fixed_prediction:
+                self._o.append(self.models_[i].decision_function(X) if self.K > 2 else \
+		                           np.vstack([-self.models_[i].decision_function(X).reshape(1, -1),
+		                                      self.models_[i].decision_function(X).reshape(1, -1)]).T)
+            else: 
+                self._o.append(np.ones(shape=(X.shape[0], self.K)) * self.fixed_prediction)
 
             if self.recurrent:
                 self._delta += np.dot(self._o[i], self.W[i])
@@ -194,7 +203,10 @@ def score_all_depths_r2(model, X, Y):
 class R2ELMLearner(R2Learner):
     def __init__(self, activation='sigmoid', recurrent=True, depth=7, \
                  seed=None, beta=0.1, scale=False, fit_c=None, use_prev=False, max_h=100, h=10,
-                 fit_h=None, C=100):
+                 fit_h=None, C=100, fixed_prediction=False):
+        """
+        @param fixed_prediction pass float to fix prediction to this number or pass False to learn model
+        """
         self.h = h
         self.max_h = max_h
 
@@ -203,24 +215,26 @@ class R2ELMLearner(R2Learner):
         else:
             raise NotImplementedError()
 
-        R2Learner.__init__(self, activation=activation, recurrent=recurrent, depth=depth, \
+        R2Learner.__init__(self, fixed_prediction=fixed_prediction, activation=activation, recurrent=recurrent, depth=depth, \
                            seed=seed, beta=beta, scale=scale, use_prev=use_prev, base_cls=base_cls,
                            is_base_multiclass=True, fit_c=fit_c, C=C)
 
 
 class R2SVMLearner(R2Learner):
     def __init__(self, activation='sigmoid', recurrent=True, depth=7, \
-                 seed=None, beta=0.1, scale=False, use_prev=False, fit_c=None, C=1, use_linear_svc=True):
-
+                 seed=None, beta=0.1, scale=False, fixed_prediction=False, use_prev=False, fit_c=None, C=1, use_linear_svc=True):
+        """
+        @param fixed_prediction pass float to fix prediction to this number or pass False to learn model
+        """
         if not use_linear_svc:
             base_cls = partial(SVC, class_weight='auto', kernel='linear', C=C)
 
-            R2Learner.__init__(self, activation=activation, recurrent=recurrent, depth=depth, \
+            R2Learner.__init__(self, fixed_prediction=fixed_prediction, activation=activation, recurrent=recurrent, depth=depth, \
                                seed=seed, beta=beta, scale=scale, fit_c=fit_c, use_prev=use_prev, base_cls=base_cls,
                                is_base_multiclass=False)
         else:
             base_cls = partial(LinearSVC, loss='l1', C=C, class_weight='auto')
 
-            R2Learner.__init__(self, activation=activation, recurrent=recurrent, depth=depth, \
+            R2Learner.__init__(self, fixed_prediction=fixed_prediction, activation=activation, recurrent=recurrent, depth=depth, \
                                seed=seed, beta=beta, fit_c=fit_c, scale=scale, use_prev=use_prev, base_cls=base_cls,
                                is_base_multiclass=True)

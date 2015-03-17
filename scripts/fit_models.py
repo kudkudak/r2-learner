@@ -6,7 +6,7 @@ from misc.experiment_utils import save_exp
 from datetime import datetime
 import time
 import numpy as np
-from multiprocessing import Pool
+from r2 import score_all_depths_r2
 
 def grid_search(model, data, param_grid, logger=None, scoring='accuracy', store_clf=False, n_jobs=8,
                 seed=None, more=False, n_folds=5, verbose=0):
@@ -79,8 +79,6 @@ def k_fold(base_model, params, data, n_folds=5, seed=None, store_clf=True, logge
     assert hasattr(data, 'data')
     assert hasattr(data, 'target')
 
-    print str(type(base_model)) + " on " + data.name + " with " + str(params)
-
     results = {}
     monitors = {}
     config = {}
@@ -98,6 +96,7 @@ def k_fold(base_model, params, data, n_folds=5, seed=None, store_clf=True, logge
     monitors["train_time"] = []
     monitors["test_time"] = []
     monitors["clf"] = []
+    monitors["best_depth"] = []
 
     X, Y = data.data, data.target
     folds = StratifiedKFold(y=Y, n_folds=n_folds, shuffle=True, random_state=seed)
@@ -115,10 +114,12 @@ def k_fold(base_model, params, data, n_folds=5, seed=None, store_clf=True, logge
             monitors['clf'].append(model)
 
         test_start = time.time()
-        Y_predicted = model.predict(X_test)
+        # Y_predicted = model.predict(X_test)
+        best_depth, score = score_all_depths_r2(model, X_test, Y_test)
         monitors['test_time'].append(time.time() - test_start)
 
-        monitors['acc_fold'].append(accuracy_score(Y_test, Y_predicted))
+        monitors['acc_fold'].append(score)
+        monitors['best_depth'].append(best_depth)
         #print "Done: %i/%i" % (i, len(folds))
 
     monitors['acc_fold'] = np.array(monitors['acc_fold'])
@@ -134,7 +135,7 @@ def k_fold(base_model, params, data, n_folds=5, seed=None, store_clf=True, logge
         logger.info(results)
         logger.info(monitors)
 
-    save_exp(experiment)
+    # save_exp(experiment)
     return experiment
 
 
