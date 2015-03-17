@@ -14,15 +14,24 @@ from misc.experiment_utils import get_logger
 from misc.config import c
 
 def main():
+    assert len(sys.argv) in [1,2]
 
     # RBF
     save = False
     type = 'small_' # small, medium, large
-    exp_name = 'rbfELM_grid_' + type + str(datetime.now().time())[:-7]
+
+    if len(sys.argv) == 2:
+        dataset =  sys.argv[1]
+    else :
+        dataset = 'iris'
+
+    exp_name = 'rbfELM_grid_' + dataset + '_' + str(datetime.now().time())[:-7]
+    print exp_name
 
     rbf_params = {'h': [i for i in xrange(20, 101, 10)],
                   'activation' : ['rbf'],
-                  'random_state': [666]}
+                  'random_state': [666],
+                  'C': [10**i for i in xrange(0, 7)]}
 
     datasets = fetch_uci_datasets(['liver'])
     model = ELM()

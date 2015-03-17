@@ -11,14 +11,24 @@ from misc.experiment_utils import get_logger
 from misc.config import c
 
 def main():
+    assert len(sys.argv) in [1,2]
 
     save = False
     type = 'small_' # small, medium, large
-    exp_name = 'R2ELM_grid_' + type + str(datetime.now().time())[:-7]
 
-    params = {'h': [i for i in xrange(20,201,20)],
+    if len(sys.argv) == 2:
+        dataset =  sys.argv[1]
+    else :
+        dataset = 'iris'
+
+    exp_name = 'R2ELM_grid_' + dataset + '_' + str(datetime.now().time())[:-7]
+    print exp_name
+
+    params = {'h': [i for i in xrange(20,101,20)],
               'beta': [0.05 * i for i in xrange(1,5)],
               'fit_h': [None], # 'grid', 'random' or None
+              'fit_c': ['random'],
+              'C': [100],
               'depth': [i for i in xrange(2,10,3)],
               'scale': [False],
               'recurrent': [True],

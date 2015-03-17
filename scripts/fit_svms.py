@@ -12,10 +12,18 @@ from misc.config import c
 import pandas as pd
 
 def main():
+    assert len(sys.argv) in [1,2]
 
     save = False
     type = 'small_' # small, medium, large
-    exp_name = 'rbfSVM_grid_' + type + str(datetime.now().time())[:-7]
+
+    if len(sys.argv) == 2:
+        dataset =  sys.argv[1]
+    else :
+        dataset = 'iris'
+
+    exp_name = 'rbfSVM_grid_' + dataset + '_' + str(datetime.now().time())[:-7]
+    print exp_name
 
     params = {'C': [np.exp(i) for i in xrange(-2,6)],
               'kernel': ['rbf'],

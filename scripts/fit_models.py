@@ -1,10 +1,12 @@
-from sklearn.grid_search import GridSearchCV
+from sklearn.grid_search import GridSearchCV, ParameterGrid
 from sklearn.cross_validation import StratifiedKFold, cross_val_score
 from sklearn.metrics import accuracy_score
 from data_api import shuffle_data
+from misc.experiment_utils import save_exp
+from datetime import datetime
 import time
 import numpy as np
-
+from multiprocessing import Pool
 
 def grid_search(model, data, param_grid, logger=None, scoring='accuracy', store_clf=False, n_jobs=8,
                 seed=None, more=False, n_folds=5, verbose=0):
@@ -68,14 +70,16 @@ def grid_search(model, data, param_grid, logger=None, scoring='accuracy', store_
         logger.info(results)
         logger.info(monitors)
 
-    return experiment
+    save_exp(experiment)
 
 
-def k_fold(model, data, n_folds=10, seed=None, store_clf=False, logger=None):
+def k_fold(base_model, params, data, n_folds=5, seed=None, store_clf=True, logger=None):
 
     assert hasattr(data, 'name')
     assert hasattr(data, 'data')
     assert hasattr(data, 'target')
+
+    print str(type(base_model)) + " on " + data.name + " with " + str(params)
 
     results = {}
     monitors = {}
@@ -85,6 +89,10 @@ def k_fold(model, data, n_folds=10, seed=None, store_clf=False, logger=None):
     config['n_folds'] = n_folds
     config['seed'] = seed
     config['store_clf'] = store_clf
+    config['params'] = params
+
+    # change it!
+    config['experiment_name'] = 'r2svm_' + data.name + '_' +  str(datetime.now().time())[:-7]
 
     monitors["acc_fold"] = []
     monitors["train_time"] = []
@@ -93,10 +101,13 @@ def k_fold(model, data, n_folds=10, seed=None, store_clf=False, logger=None):
 
     X, Y = data.data, data.target
     folds = StratifiedKFold(y=Y, n_folds=n_folds, shuffle=True, random_state=seed)
+    i = 0
     for train_index, test_index in folds:
+        i += 1
         X_train, X_test, Y_train, Y_test = X[train_index], X[test_index], Y[train_index], Y[test_index]
 
         train_start = time.time()
+        model = base_model.set_params(**params)
         model.fit(X_train, Y_train)
         monitors['train_time'].append(time.time() - train_start)
 
@@ -108,6 +119,7 @@ def k_fold(model, data, n_folds=10, seed=None, store_clf=False, logger=None):
         monitors['test_time'].append(time.time() - test_start)
 
         monitors['acc_fold'].append(accuracy_score(Y_test, Y_predicted))
+        #print "Done: %i/%i" % (i, len(folds))
 
     monitors['acc_fold'] = np.array(monitors['acc_fold'])
     monitors['std'] = monitors['acc_fold'].std()
@@ -122,6 +134,7 @@ def k_fold(model, data, n_folds=10, seed=None, store_clf=False, logger=None):
         logger.info(results)
         logger.info(monitors)
 
+    save_exp(experiment)
     return experiment
 
 
