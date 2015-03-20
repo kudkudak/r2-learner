@@ -31,6 +31,25 @@ def fetch_uci_datasets(names=None):
     assert(os.path.exists(os.path.join(data_dir, 'news20.t.scale')))
     assert(os.path.exists(os.path.join(data_dir, 'covtype.scale')))
     assert(os.path.exists(os.path.join(data_dir, 'mnist.pkl')))
+    # new
+    assert(os.path.exists(os.path.join(data_dir, 'australian')))
+    assert(os.path.exists(os.path.join(data_dir, 'bank')))
+    assert(os.path.exists(os.path.join(data_dir, 'breast-cancer')))
+    assert(os.path.exists(os.path.join(data_dir, 'crashes')))
+    assert(os.path.exists(os.path.join(data_dir, 'diabetes')))
+    assert(os.path.exists(os.path.join(data_dir, 'fourclass')))
+    assert(os.path.exists(os.path.join(data_dir, 'german.numer')))
+    assert(os.path.exists(os.path.join(data_dir, 'indian')))
+    assert(os.path.exists(os.path.join(data_dir, 'ionosphere_scale')))
+    assert(os.path.exists(os.path.join(data_dir, 'mushrooms')))
+    assert(os.path.exists(os.path.join(data_dir, 'sonar_scale')))
+    assert(os.path.exists(os.path.join(data_dir, 'splice')))
+
+
+
+
+
+
 
     uci_datasets = []
     if 'iris' in names:
@@ -93,6 +112,57 @@ def fetch_uci_datasets(names=None):
         mnist = Bunch(**{'name': 'mnist', 'data': mnist_x, 'target': mnist_y})
         uci_datasets.append(mnist)
 
+    # new data sets
+    if 'australian' in names:
+        australian_x, australian_y = datasets.load_svmlight_file(os.path.join(data_dir, 'australian'))
+        australian = Bunch(**{'name': 'australian', 'data': australian_x, 'target': australian_y})
+        uci_datasets.append(australian)
+    if 'bank' in names:
+        bank_x, bank_y = datasets.load_svmlight_file(os.path.join(data_dir, 'bank'))
+        bank = Bunch(**{'name': 'bank', 'data': bank_x, 'target': bank_y})
+        uci_datasets.append(bank)
+    if 'breast_cancer' in names:
+        breast_cancer_x, breast_cancer_y = datasets.load_svmlight_file(os.path.join(data_dir, 'breast-cancer'))
+        breast_cancer = Bunch(**{'name': 'breast_cancer', 'data': breast_cancer_x, 'target': breast_cancer_y})
+        uci_datasets.append(breast_cancer)
+    if 'crashes' in names:
+        crashes_x, crashes_y = datasets.load_svmlight_file(os.path.join(data_dir, 'crashes'))
+        crashes = Bunch(**{'name': 'crashes', 'data': crashes_x, 'target': crashes_y})
+        uci_datasets.append(crashes)
+    if 'diabetes' in names:
+        diabetes_x, diabetes_y = datasets.load_svmlight_file(os.path.join(data_dir, 'diabetes'))
+        diabetes = Bunch(**{'name': 'bank', 'data': diabetes_x, 'target': diabetes_y})
+        uci_datasets.append(diabetes)
+    if 'fourclass' in names:
+        fourclass_x, fourclass_y = datasets.load_svmlight_file(os.path.join(data_dir, 'fourclass'))
+        fourclass = Bunch(**{'name': 'bank', 'data': fourclass_x, 'target': fourclass_y})
+        uci_datasets.append(fourclass)
+    if 'german' in names:
+        german_x, german_y = datasets.load_svmlight_file(os.path.join(data_dir, 'german.numer'))
+        german = Bunch(**{'name': 'german', 'data': german_x, 'target': german_y})
+        uci_datasets.append(german)
+    if 'indian' in names:
+        indian_x, indian_y = datasets.load_svmlight_file(os.path.join(data_dir, 'indian'))
+        indian = Bunch(**{'name': 'indian', 'data': indian_x, 'target': indian_y})
+        uci_datasets.append(indian)
+    if 'ionosphere' in names:
+        ionosphere_x, ionosphere_y = datasets.load_svmlight_file(os.path.join(data_dir, 'ionosphere_scale'))
+        ionosphere = Bunch(**{'name': 'ionosphere', 'data': ionosphere_x, 'target': ionosphere_y})
+        uci_datasets.append(ionosphere)
+    if 'mushrooms' in names:
+        mushrooms_x, mushrooms_y = datasets.load_svmlight_file(os.path.join(data_dir, 'mushrooms'))
+        mushrooms = Bunch(**{'name': 'bank', 'data': mushrooms_x, 'target': mushrooms_y})
+        uci_datasets.append(mushrooms)
+    if 'sonar' in names:
+        sonar_x, sonar_y = datasets.load_svmlight_file(os.path.join(data_dir, 'sonar_scale'))
+        sonar = Bunch(**{'name': 'bank', 'data': sonar_x, 'target': sonar_y})
+        uci_datasets.append(sonar)
+    if 'splice' in names:
+        splice_x, splice_y = datasets.load_svmlight_file(os.path.join(data_dir, 'splice'))
+        splice = Bunch(**{'name': 'splice', 'data': splice_x, 'target': splice_y})
+        uci_datasets.append(splice)
+
+
     for dataset in uci_datasets :
         dataset.n_class = len(set(dataset.target))
         dataset.n_dim = dataset.data.shape[1]
@@ -119,6 +189,10 @@ def fetch_medium_datasets():
 def fetch_all_datasets(): # for when shit gets real
     return fetch_uci_datasets(['iris', 'liver', 'heart', 'wine', 'glass', 'segment', 'satimage', \
                                'pendigits', 'mnist', 'news20', 'covtype', 'aloi'])
+
+def fetch_new_datasets():
+    return fetch_uci_datasets(['australian', 'bank', 'breast_cancer', 'crashes', 'diabetes', 'fourclass', \
+                               'german', 'indian', 'ionosphere', 'mushrooms', 'sonar', 'splice'])
 
 
 def fetch_synthetic_datasets():

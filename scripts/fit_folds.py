@@ -9,7 +9,7 @@ from data_api import fetch_uci_datasets
 from r2 import R2SVMLearner
 import time
 
-n_jobs = 16
+n_jobs = 4
 
 assert len(sys.argv) in [1,2]
 
@@ -18,8 +18,7 @@ if len(sys.argv) == 2:
 else :
     dataset = 'iris'
 
-params = {'C': [np.exp(i) for i in xrange(-2, 6)],
-          'beta': [0.1, 0.5, 1.0, 1.5, 2.0],
+params = {'beta': [0.1, 0.5, 1.0, 1.5, 2.0],
           'fit_c': ['random'],              # SINGLE
           'activation': ['sigmoid'],        # SINGLE
           'scale': [True, False],

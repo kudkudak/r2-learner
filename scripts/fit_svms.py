@@ -1,53 +1,49 @@
 import sys, os
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
-import pickle
+from sklearn.grid_search import GridSearchCV, ParameterGrid
 import numpy as np
-from fit_models import grid_search
+from multiprocessing import Pool
+from fit_models import k_fold
+from data_api import fetch_uci_datasets
 from sklearn.svm import SVC
-from datetime import datetime
-from data_api import fetch_small_datasets
-from misc.experiment_utils import get_logger
-from misc.config import c
-import pandas as pd
+import time
 
-def main():
-    assert len(sys.argv) in [1,2]
+n_jobs = 4
 
-    save = False
-    type = 'small_' # small, medium, large
+assert len(sys.argv) in [1,2]
 
-    if len(sys.argv) == 2:
-        dataset =  sys.argv[1]
-    else :
-        dataset = 'iris'
+if len(sys.argv) == 2:
+    dataset =  sys.argv[1]
+else :
+    dataset = 'iris'
 
-    exp_name = 'rbfSVM_grid_' + dataset + '_' + str(datetime.now().time())[:-7]
-    print exp_name
+params = {'C': [np.exp(i) for i in xrange(-2,6)],
+          'kernel': ['rbf'],
+          'gamma': [np.exp(i) for i in xrange(-10,11)],
+          'class_weight': ['auto']}
 
-    params = {'C': [np.exp(i) for i in xrange(-2,6)],
-              'kernel': ['rbf'],
-              'gamma': [np.exp(i) for i in xrange(-10,11)],
-              'class_weight': ['auto']}
+data = fetch_uci_datasets([dataset])[0]
+model = SVC()
+param_list = ParameterGrid(params)
+exp_name = 'test'
 
-    datasets = fetch_small_datasets()
-    model = SVC()
-    logger = get_logger(exp_name, to_file=False)
-    results = {d.name: {} for d in datasets}
-    monitors = {d.name: {} for d in datasets}
+def gen_params():
+    for i, param in enumerate(param_list):
+        yield {'model': model, 'params': param, 'data': data, 'name': exp_name}
 
-    for data in datasets:
-        exp = grid_search(model, data, params, logger=logger, verbose=1)
-        results[data.name] = exp['results']
-        monitors[data.name] = exp['monitors']
-        results[data.name].update(monitors[data.name])
-        print data.name + " done!"
+params = list(gen_params())
 
-    if save:
-        ret = pd.DataFrame.from_dict(results)
-        f = open(os.path.join(c["RESULTS_DIR"],exp_name + '.pkl'), 'wb')
-        pickle.dump(ret, f)
-        f.close()
+def run(p):
+    k_fold(base_model=p['model'], params=p['params'], data=p['data'], exp_name=p['name'])
+#
+# for p in params:
+#     run(p)
 
-if __name__ == '__main__':
-    main()
+p = Pool(n_jobs)
+rs = p.map_async(run, params)
+while True :
+    if (rs.ready()): break
+    remaining = rs._number_left
+    print "Waiting for", remaining, "tasks to complete on", data.name
+    time.sleep(10)

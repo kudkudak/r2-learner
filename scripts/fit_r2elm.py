@@ -1,58 +1,46 @@
 import sys, os
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
-import pandas as pd
-import pickle
-from fit_models import grid_search
+from sklearn.grid_search import GridSearchCV, ParameterGrid
+import numpy as np
+from multiprocessing import Pool
+from fit_models import k_fold
+from data_api import fetch_uci_datasets, fetch_small_datasets
 from r2 import R2ELMLearner
-from datetime import datetime
-from data_api import fetch_small_datasets, fetch_uci_datasets, fetch_medium_datasets
-from misc.experiment_utils import get_logger
-from misc.config import c
+import time
 
-def main():
-    assert len(sys.argv) in [1,2]
+n_jobs = 4
 
-    save = False
-    type = 'small_' # small, medium, large
+params = {'h': [i for i in xrange(20,101,20)],
+          'beta': [0.1, 0.5, 1.0, 1.5, 2.0],
+          'fit_c': ['random'],
+          'scale': [True, False],
+          'recurrent': [True, False],
+          'use_prev': [True, False],
+          'seed': [666]}
 
-    if len(sys.argv) == 2:
-        dataset =  sys.argv[1]
-    else :
-        dataset = 'iris'
+datasets = fetch_small_datasets()
+model = R2ELMLearner()
+param_list = ParameterGrid(params)
+exp_name = 'test'
 
-    exp_name = 'R2ELM_grid_' + dataset + '_' + str(datetime.now().time())[:-7]
-    print exp_name
-
-    params = {'h': [i for i in xrange(20,101,20)],
-              'beta': [0.05 * i for i in xrange(1,5)],
-              'fit_c': ['random'],
-              'C': [100],
-              'scale': [False],
-              'recurrent': [True],
-              'use_prev': [False],
-              'seed': [666]}
-
-    datasets = fetch_medium_datasets()
-    model = R2ELMLearner()
-    logger = get_logger(exp_name, to_file=False)
-    results = {d.name: {} for d in datasets}
-    monitors = {d.name: {} for d in datasets}
-
+def gen_params():
     for data in datasets:
-        exp = grid_search(model, data, params, logger=logger, verbose=1)
-        results[data.name] = exp['results']
-        monitors[data.name] = exp['monitors']
-        results[data.name].update(monitors[data.name])
-        print data.name + " done!"
+        for i, param in enumerate(param_list):
+            yield {'model': model, 'params': param, 'data': data, 'name': exp_name}
 
-    if save:
-        ret = pd.DataFrame.from_dict(results)
-        f = open(os.path.join(c["RESULTS_DIR"],exp_name + '.pkl'), 'wb')
-        pickle.dump(ret, f)
-        f.close()
+params = list(gen_params())
 
-if __name__ == '__main__':
-    main()
+def run(p):
+    k_fold(base_model=p['model'], params=p['params'], data=p['data'], exp_name=p['name'])
+#
+# for p in params:
+#     run(p)
 
-
+p = Pool(n_jobs)
+rs = p.map_async(run, params)
+while True :
+    if (rs.ready()): break
+    remaining = rs._number_left
+    print "Waiting for", remaining, "tasks to complete..."
+    time.sleep(10)
