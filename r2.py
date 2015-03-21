@@ -6,6 +6,7 @@ from sklearn.svm import SVC, LinearSVC
 from sklearn.preprocessing import MinMaxScaler, Normalizer, StandardScaler
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn.cross_validation import KFold, cross_val_score
+from sklearn.linear_model import LogisticRegression
 
 from functools import partial
 from elm import ELM
@@ -22,10 +23,10 @@ class MyLinModel(BaseEstimator):
         pass
     
     def predict(self, X):
-        return (np.dot(X, self.w.T) + self.b)>=0
+        return np.argmax(self.decision_function(X), axis=1)
 
     def decision_function(self, X):
-        return np.dot(X, self.w.T) + self.b
+        return X.dot(self.w.T) + self.b
 
 def make_rand_vector(dims):
     vec = [np.random.normal(0, 1) for i in range(dims)]
@@ -51,8 +52,7 @@ def _r2_compress_model(r2):
 class R2Learner(BaseEstimator):
     def __init__(self, C=1, activation='sigmoid', recurrent=True, depth=7, \
                  seed=None, beta=0.1, scale=False, use_prev=False, fit_c=None, base_cls=None, 
-				fixed_prediction=False,
-				is_base_multiclass=False):
+				fixed_prediction=False, is_base_multiclass=False):
         self.name = 'r2svm'
         self.fixed_prediction = fixed_prediction
         self.use_prev = use_prev
@@ -91,9 +91,13 @@ class R2Learner(BaseEstimator):
         if not self._fitted:
             if self.fit_c is None:
                 self.models_[i].fit(X, Y)
-            elif self.fit_c is 'random_cls':
+            elif self.fit_c == 'random_cls':
                 if i != self.depth - 1:
-                    self.models_[i] = MyLinModel(make_rand_vector(X.shape[1]), np.random.uniform(X.min(), X.max()))
+                    if self.K <= 2:
+                        self.models_[i] = MyLinModel(make_rand_vector(X.shape[1]), np.random.uniform(X.min(), X.max()))
+                    else:
+                        w = np.hstack([make_rand_vector(X.shape[1]).T for _ in range(self.K)]).T
+                        self.models_[i] = MyLinModel(w, np.random.uniform(X.min(), X.max()))
                 else:
                     self.models_[i].fit(X, Y)
             elif self.fit_c == 'random':
@@ -186,7 +190,10 @@ class R2Learner(BaseEstimator):
         # else :
         else:
             if self.is_base_multiclass:
-                self.models_ = [self.base_cls().set_params(random_state=self.random_state) for _ in xrange(self.depth)]
+                if self.base_cls.func != LogisticRegression:
+                    self.models_ = [self.base_cls().set_params(random_state=self.random_state) for _ in xrange(self.depth)]
+                else:
+                    self.models_ = [self.base_cls() for _ in xrange(self.depth)]
             else:
                 self.models_ = [OneVsRestClassifier(self.base_cls().set_params(random_state=self.random_state), \
                                                     n_jobs=1) for _ in xrange(self.depth)]
@@ -263,8 +270,8 @@ class R2ELMLearner(R2Learner):
 
 
 class R2SVMLearner(R2Learner):
-    def __init__(self, activation='sigmoid', recurrent=True, depth=10, \
-                 seed=None, beta=0.1, scale=False, fixed_prediction=False, use_prev=False, fit_c=None, C=1, use_linear_svc=True):
+    def __init__(self, activation='sigmoid', recurrent=True, depth=10, seed=None, beta=0.1, scale=False,
+                 fixed_prediction=False, use_prev=False, fit_c=None, C=1, use_linear_svc=True):
         """
         @param fixed_prediction pass float to fix prediction to this number or pass False to learn model
         """
@@ -279,4 +286,15 @@ class R2SVMLearner(R2Learner):
 
             R2Learner.__init__(self, fixed_prediction=fixed_prediction, activation=activation, recurrent=recurrent, depth=depth, \
                                seed=seed, beta=beta, fit_c=fit_c, scale=scale, use_prev=use_prev, base_cls=base_cls,
+                               is_base_multiclass=True)
+
+
+class R2LRLearner(R2Learner):
+    def __init__(self, activation='sigmoid', recurrent=True, depth=10, seed=None, beta=0.1, scale=False, \
+                 fixed_prediction=False, use_prev=False, logger=None):
+
+        base_cls =  partial(LogisticRegression, fit_intercept=True)
+
+        R2Learner.__init__(self, fixed_prediction=fixed_prediction, activation=activation, recurrent=recurrent, depth=depth, \
+                               seed=seed, beta=beta, scale=scale, use_prev=use_prev, base_cls=base_cls,
                                is_base_multiclass=True)

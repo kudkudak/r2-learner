@@ -92,8 +92,10 @@ def get_exp_fname(E):
     return E["config"]["experiment_name"] + ".experiment"
 
 
-def exp_done(E):
-    return os.path.exist(get_exp_fname(E))
+def exp_done(E, dir_name):
+    directory = os.path.join(c["RESULTS_DIR"], dir_name)
+    path = os.path.join(directory, get_exp_fname(E))
+    return os.path.exists(path)
 
 
 def save_exp(E, dir_name):
@@ -105,12 +107,12 @@ def save_exp(E, dir_name):
 def shorten_params(params):
     short_params = ""
     for k, v in params.iteritems():
-        if k in ['C', 'beta', 'h', 'scale', 'recurrent', 'use_prev']:
+        if k in ['C', 'beta', 'h', 'scale', 'recurrent', 'use_prev', 'gamma']:
             short_params += str(k)[0]
             if type(v) == float:
                 short_params += "%2.2f" % v
             elif type(v) == int:
-                short_params += str(int)
+                short_params += str(v)
             elif type(v) == bool:
                 if v: short_params += 'T'
                 else: short_params += 'F'

@@ -131,11 +131,11 @@ def fetch_uci_datasets(names=None):
         uci_datasets.append(crashes)
     if 'diabetes' in names:
         diabetes_x, diabetes_y = datasets.load_svmlight_file(os.path.join(data_dir, 'diabetes'))
-        diabetes = Bunch(**{'name': 'bank', 'data': diabetes_x, 'target': diabetes_y})
+        diabetes = Bunch(**{'name': 'diabetess', 'data': diabetes_x, 'target': diabetes_y})
         uci_datasets.append(diabetes)
     if 'fourclass' in names:
         fourclass_x, fourclass_y = datasets.load_svmlight_file(os.path.join(data_dir, 'fourclass'))
-        fourclass = Bunch(**{'name': 'bank', 'data': fourclass_x, 'target': fourclass_y})
+        fourclass = Bunch(**{'name': 'fourclass', 'data': fourclass_x, 'target': fourclass_y})
         uci_datasets.append(fourclass)
     if 'german' in names:
         german_x, german_y = datasets.load_svmlight_file(os.path.join(data_dir, 'german.numer'))
@@ -151,11 +151,11 @@ def fetch_uci_datasets(names=None):
         uci_datasets.append(ionosphere)
     if 'mushrooms' in names:
         mushrooms_x, mushrooms_y = datasets.load_svmlight_file(os.path.join(data_dir, 'mushrooms'))
-        mushrooms = Bunch(**{'name': 'bank', 'data': mushrooms_x, 'target': mushrooms_y})
+        mushrooms = Bunch(**{'name': 'mushrooms', 'data': mushrooms_x, 'target': mushrooms_y})
         uci_datasets.append(mushrooms)
     if 'sonar' in names:
         sonar_x, sonar_y = datasets.load_svmlight_file(os.path.join(data_dir, 'sonar_scale'))
-        sonar = Bunch(**{'name': 'bank', 'data': sonar_x, 'target': sonar_y})
+        sonar = Bunch(**{'name': 'sonar', 'data': sonar_x, 'target': sonar_y})
         uci_datasets.append(sonar)
     if 'splice' in names:
         splice_x, splice_y = datasets.load_svmlight_file(os.path.join(data_dir, 'splice'))

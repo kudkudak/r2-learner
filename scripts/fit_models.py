@@ -2,10 +2,11 @@ from sklearn.grid_search import GridSearchCV, ParameterGrid
 from sklearn.cross_validation import StratifiedKFold, cross_val_score
 from sklearn.metrics import accuracy_score
 from data_api import shuffle_data
-from misc.experiment_utils import save_exp, get_exp_logger, shorten_params
+from misc.experiment_utils import save_exp, get_exp_logger, shorten_params, exp_done
 from datetime import datetime
 import time
 import numpy as np
+import sys
 from r2 import score_all_depths_r2, _r2_compress_model
 
 def grid_search(model, data, param_grid, logger=None, scoring='accuracy', store_clf=False, n_jobs=8,
@@ -73,7 +74,8 @@ def grid_search(model, data, param_grid, logger=None, scoring='accuracy', store_
     save_exp(experiment)
 
 
-def k_fold(base_model, params, data, exp_name, n_folds=5, seed=None, store_clf=True, log=True, n_tries=3, save_model=True):
+def k_fold(base_model, params, data, exp_name, model_name,  n_folds=5, seed=None, store_clf=True, log=True, n_tries=3, save_model=True):
+
 
     assert hasattr(data, 'name')
     assert hasattr(data, 'data')
@@ -92,8 +94,11 @@ def k_fold(base_model, params, data, exp_name, n_folds=5, seed=None, store_clf=T
     short_params = shorten_params(params)
 
     # change it!
-    config['experiment_name'] = exp_name + '_r2elm_' + data.name + '_' + short_params
-    dir_name = exp_name + '_r2svm_' + data.name
+    config['experiment_name'] = exp_name + '_' + model_name + '_' + data.name + '_' + short_params
+    dir_name = exp_name + '_' + model_name + '_' + data.name
+
+    if save_model and exp_done(experiment, dir_name):
+        return
 
     monitors["acc_fold"] = []
     monitors["train_time"] = []
@@ -152,9 +157,9 @@ def k_fold(base_model, params, data, exp_name, n_folds=5, seed=None, store_clf=T
         logger.info(monitors)
 
     # UNCOMMENT FOR REAL TESTING!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    if save_model:    
+    if save_model:
         save_exp(experiment, dir_name)
-    
+
     return experiment
 
 
@@ -168,7 +173,7 @@ def nk_folds(model, params, data, n=50, n_folds=10, n_jobs=4):
 
     return np.mean(scores), np.std(scores)
 
-def svc_k_fold(base_model, params, data, exp_name, n_folds=5, seed=None, store_clf=False, log=True, n_tries=3, save_model=True):
+def extern_k_fold(base_model, params, data, exp_name, model_name, n_folds=5, seed=None, store_clf=False, log=True, save_model=True):
 
     assert hasattr(data, 'name')
     assert hasattr(data, 'data')
@@ -186,15 +191,13 @@ def svc_k_fold(base_model, params, data, exp_name, n_folds=5, seed=None, store_c
 
     short_params = shorten_params(params)
 
-    # change it!
-    config['experiment_name'] = exp_name + '_svc_' + data.name + '_' + short_params
-    dir_name = exp_name + '_r2svm_' + data.name
+    config['experiment_name'] = exp_name + '_' + model_name + '_' + data.name + '_' + short_params
+    dir_name = exp_name + '-' + model_name + '_' + data.name
 
     monitors["acc_fold"] = []
     monitors["train_time"] = []
     monitors["test_time"] = []
     monitors["clf"] = []
-    monitors["best_depth"] = []
 
     if log:
         logger = get_exp_logger(config, dir_name, to_file=True, to_std=False)
@@ -206,31 +209,22 @@ def svc_k_fold(base_model, params, data, exp_name, n_folds=5, seed=None, store_c
         i += 1
         X_train, X_test, Y_train, Y_test = X[train_index], X[test_index], Y[train_index], Y[test_index]
 
-        fold_accs = []
-        fold_train_times = []
-        fold_test_times = []
+        train_start = time.time()
+        model = base_model.set_params(**params)
+        model.fit(X_train, Y_train)
+        train_time = time.time() - train_start
 
-        for seed_bias in xrange(n_tries):
-            params['seed'] += seed_bias
-            train_start = time.time()
-            model = base_model.set_params(**params)
-            model.fit(X_train, Y_train)
-            fold_train_times.append(time.time() - train_start)
+        test_start = time.time()
+        Y_pred = model.predict(X_test)
+        test_time = time.time() - test_start
+        score = accuracy_score(Y_test, Y_pred)
 
-            test_start = time.time()
-            best_depth, score = score_all_depths_r2(model, X_test, Y_test)
-            fold_test_times.append(time.time() - test_start)
+        if store_clf :
+            monitors['clf'].append(model)
 
-            if store_clf :
-                monitors['clf'].append(_r2_compress_model(model))
-
-            fold_accs.append(score)
-
-        monitors['train_time'].append(fold_train_times)
-        monitors['test_time'].append(fold_test_times)
-        monitors['acc_fold'].append(fold_accs)
-        monitors['best_depth'].append(best_depth)
-        #print "Done: %i/%i" % (i, len(folds))
+        monitors['train_time'].append(train_time)
+        monitors['test_time'].append(test_time)
+        monitors['acc_fold'].append(score)
 
     monitors['acc_fold'] = np.array(monitors['acc_fold'])
     monitors['std'] = monitors['acc_fold'].std()

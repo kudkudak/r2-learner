@@ -1,80 +1,45 @@
 import sys, os
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
-
-import pandas as pd
-import os
-import pickle
+from sklearn.grid_search import GridSearchCV, ParameterGrid
 import numpy as np
-from fit_models import grid_search
+from multiprocessing import Pool
+from fit_models import extern_k_fold
+from data_api import *
 from elm import ELM
-from datetime import datetime
-from data_api import fetch_uci_datasets
-from misc.experiment_utils import get_logger
-from misc.config import c
+import time
 
-def main():
-    assert len(sys.argv) in [1,2]
+n_jobs = 8
 
-    # RBF
-    save = False
-    type = 'small_' # small, medium, large
+params = {'h': [i for i in xrange(20, 101, 20)],
+          'C': [10**i for i in xrange(0, 7)],
+          'activation' : ['sigmoid'],
+          'random_state': [666]}
 
-    if len(sys.argv) == 2:
-        dataset =  sys.argv[1]
-    else :
-        dataset = 'iris'
+datasets = fetch_new_datasets()
+datasets += fetch_small_datasets()
 
-    exp_name = 'rbfELM_grid_' + dataset + '_' + str(datetime.now().time())[:-7]
-    print exp_name
+model = ELM()
+param_list = ParameterGrid(params)
+exp_name = 'test'
 
-    rbf_params = {'h': [i for i in xrange(20, 101, 10)],
-                  'activation' : ['rbf'],
-                  'random_state': [666],
-                  'C': [10**i for i in xrange(0, 7)]}
-
-    datasets = fetch_uci_datasets(['liver'])
-    model = ELM()
-    logger = get_logger(exp_name, to_file=False)
-    results = {d.name: {} for d in datasets}
-    monitors = {d.name: {} for d in datasets}
-
+def gen_params():
     for data in datasets:
-        exp = grid_search(model, data, rbf_params, logger=logger, verbose=1)
-        results[data.name] = exp['results']
-        monitors[data.name] = exp['monitors']
-        results[data.name].update(monitors[data.name])
-        print data.name + " done!"
+        for param in param_list:
+            yield {'model': model, 'params': param, 'data': data, 'name': exp_name, 'model_name': 'elm'}
 
-    if save:
-        ret = pd.DataFrame.from_dict(results)
-        f = open(os.path.join(c["RESULTS_DIR"],exp_name + '.pkl'), 'wb')
-        pickle.dump(ret, f)
-        f.close()
+params = list(gen_params())
 
-    # SIG
-    exp_name = 'sigELM_grid_' + str(datetime.now().time())[:-7]
+def run(p):
+    extern_k_fold(base_model=p['model'], params=p['params'], data=p['data'], exp_name=p['name'], model_name=p['model_name'])
 
-    sig_params = {'h': [i for i in xrange(20, 101, 10)],
-                     'activation' : ['sigmoid'],
-                     'random_state': [666]}
+# for p in params:
+#     run(p)
 
-    logger = get_logger(exp_name, to_file=False)
-    results = {d.name: {} for d in datasets}
-    monitors = {d.name: {} for d in datasets}
-
-    for data in datasets:
-        exp = grid_search(model, data, sig_params, logger=logger, verbose=1)
-        results[data.name] = exp['results']
-        monitors[data.name] = exp['monitors']
-        results[data.name].update(monitors[data.name])
-        print data.name + " done!"
-
-    if save:
-        ret = pd.DataFrame.from_dict(results)
-        f = open(os.path.join(c["RESULTS_DIR"],exp_name + '.pkl'), 'wb')
-        pickle.dump(ret, f)
-        f.close()
-
-if __name__ == '__main__':
-    main()
+p = Pool(n_jobs)
+rs = p.map_async(run, params)
+while True :
+    if (rs.ready()): break
+    remaining = rs._number_left
+    print "Waiting for", remaining, "tasks to complete for elm"
+    time.sleep(10)
