@@ -16,12 +16,13 @@ from sklearn.base import BaseEstimator, clone
 
 class MyLinModel(BaseEstimator):
     def __init__(self,w,b):
+        assert len(b.shape) == 1
         self.w=w
         self.b=b
-    
+
     def fit(self, X, Y):
         pass
-    
+
     def predict(self, X):
         return np.argmax(self.decision_function(X), axis=1)
 
@@ -44,15 +45,15 @@ def _r2_compress_model(r2):
         # I know it should be class testing ok?
         if hasattr(r2.models_[id], 'coef_'):
             if hasattr(r2.models_[id], 'intercept_'):
-                r2.models_[id] = {"w": r2.models_[id].coef_, "b":  r2.models_[id].intercept_, "params": r2.models_[id].get_params()} 
+                r2.models_[id] = {"w": r2.models_[id].coef_, "b":  r2.models_[id].intercept_, "params": r2.models_[id].get_params()}
             elif hasattr(r2.models_[id], 'coef0'):
                 r2.models_[id] = {"w": r2.models_[id].coef_, "b":  r2.models_[id].coef0, "params": r2.models_[id].get_params()}
     return r2
 
 class R2Learner(BaseEstimator):
     def __init__(self, C=1, activation='sigmoid', recurrent=True, depth=7, \
-                 seed=None, beta=0.1, scale=False, use_prev=False, fit_c=None, base_cls=None, 
-				fixed_prediction=False, is_base_multiclass=False):
+                 seed=None, beta=0.1, scale=False, use_prev=False, fit_c=None, base_cls=None,
+				fixed_prediction=False, is_base_multiclass=False, switched=False):
         self.name = 'r2svm'
         self.fixed_prediction = fixed_prediction
         self.use_prev = use_prev
@@ -76,8 +77,9 @@ class R2Learner(BaseEstimator):
         self._X_moved = []
         self._X_tr = []
         self._prev_C = None
+        self.switched = switched
 
-            
+
     def _feed_forward(self, X, i, Y=None):
         # Modifies state (_o, _delta, _fitted, _X_tr, _X_moved)
         # Assumes scaled data passed to it (so you have to scale data)
@@ -91,51 +93,72 @@ class R2Learner(BaseEstimator):
         if not self._fitted:
             if self.fit_c is None:
                 self.models_[i].fit(X, Y)
-            elif self.fit_c == 'random_cls':
+            elif self.fit_c == 'random_cls' or self.fit_c == 'random_cls_centered':
                 if i != self.depth - 1:
                     if self.K <= 2:
-                        self.models_[i] = MyLinModel(make_rand_vector(X.shape[1]), np.random.uniform(X.min(), X.max()))
+                        w = make_rand_vector(X.shape[1])
+                        if self.fit_c == 'random_cls':
+                            b = np.random.uniform(X.min(), X.max())
+                        elif self.fit_c == 'random_cls_centered':
+                            p = w.dot(X.T)
+                            if np.std(p) != 0:
+                                b = np.random.normal((p.max() - p.min())/2, np.std(p))
+                            else:
+                                b = np.random.normal((p.max() - p.min())/2, 1)
+
+                        self.models_[i] = MyLinModel(w, b)
                     else:
                         w = np.hstack([make_rand_vector(X.shape[1]).T for _ in range(self.K)]).T
-                        self.models_[i] = MyLinModel(w, np.random.uniform(X.min(), X.max()))
+                        p = w.dot(X.T)
+
+                        if self.fit_c == 'random_cls':
+                            b = np.array([np.random.uniform(X.min(), X.max()) for _ in range(self.K)])
+                        elif self.fit_c == 'random_cls_centered':
+                            b = []
+                            for pi in p:
+                                b.append(np.random.normal((pi.max() - pi.min())/2, np.std(pi)))
+                            b = np.array(b)
+
+                        self.models_[i] = MyLinModel(w, b)
                 else:
                     self.models_[i].fit(X, Y)
             elif self.fit_c == 'random':
-                best_C = None
-                best_score = 0.
-                fit_size = 7
-                if type(self.base_cls) == ELM:
-                    c = [10**i for i in xrange(0, fit_size)]
-                else :
-                    c = np.random.uniform(size=fit_size)
-                    c = MinMaxScaler((-2, 10)).fit_transform(c)
-                    c = [np.exp(x) for x in c]
-                    # Add one and previous
-                    c = list(set(c).union([1]).union([self._prev_C])) if self._prev_C else list(set(c).union([1]))
+                if not self.fixed_prediction or i == self.depth - 1:
+                    best_C = None
+                    best_score = 0.
+                    fit_size = 7
+                    if type(self.models_[i]) == ELM:
+                        c = [10**j for j in xrange(0, fit_size)]
+                    elif type(self.models_[i]) == LinearSVC or type(self.models_[i] == SVC) :
+                        c = np.random.uniform(size=fit_size)
+                        c = MinMaxScaler((-2, 10)).fit_transform(c)
+                        c = [np.exp(x) for x in c]
+                        # Add one and previous
+                        c = list(set(c).union([1]).union([self._prev_C])) if self._prev_C else list(set(c).union([1]))
 
-                for j in xrange(fit_size):
-                    model = clone(self.models_[i]).set_params(estimator__C=c[j]) if not self.is_base_multiclass \
-                                                                                    and self.K > 2 else \
-                        clone(self.models_[i]).set_params(C=c[j])
-                    scores = cross_val_score(model, X, Y, scoring='accuracy', \
-                                             cv=KFold(X.shape[0], shuffle=True, random_state=self.random_state))
-                    score = scores.mean()
-                    if score > best_score:
-                        best_score = score
-                        best_C = c[j]
-                assert best_C is not None
-                self.models_[i].set_params(estimator__C=best_C) if not self.is_base_multiclass and self.K > 2\
-                    else self.models_[i].set_params(C=best_C)
-                self._prev_C = best_C
-                self.models_[i].fit(X, Y)
+                    for j in xrange(fit_size):
+                        model = clone(self.models_[i]).set_params(estimator__C=c[j]) if not self.is_base_multiclass \
+                                                                                        and self.K > 2 else \
+                            clone(self.models_[i]).set_params(C=c[j])
+                        scores = cross_val_score(model, X, Y, scoring='accuracy', \
+                                                 cv=KFold(X.shape[0], shuffle=True, random_state=self.random_state))
+                        score = scores.mean()
+                        if score > best_score:
+                            best_score = score
+                            best_C = c[j]
+                    assert best_C is not None
+                    self.models_[i].set_params(estimator__C=best_C) if not self.is_base_multiclass and self.K > 2 \
+                        else self.models_[i].set_params(C=best_C)
+                    self._prev_C = best_C
+                    self.models_[i].fit(X, Y)
 
         if i != self.depth - 1:
-            
+
             if not self.fixed_prediction:
                 self._o.append(self.models_[i].decision_function(X) if self.K > 2 else \
 		                           np.vstack([-self.models_[i].decision_function(X).reshape(1, -1),
 		                                      self.models_[i].decision_function(X).reshape(1, -1)]).T)
-            elif isinstance(self.fixed_prediction, (int, long, float, complex)): 
+            elif isinstance(self.fixed_prediction, (int, long, float, complex)):
                 self._o.append(np.ones(shape=(X.shape[0], self.K)) * self.fixed_prediction)
             else:
                 raise NotImplementedError("self.fixed_prediction is wut?")
@@ -176,18 +199,13 @@ class R2Learner(BaseEstimator):
         self.random_state = np.random.RandomState(self.seed)
 
         # Models and scalers
-        if type(X) == np.ndarray:
-            self.scalers_ = [MinMaxScaler((-1.2, 1.2)) for _ in xrange(self.depth)]
-        elif type(X) == scipy.sparse.csr.csr_matrix:
-            self.scalers_ = [Normalizer(norm='l2') for _ in xrange(self.depth)]
-        else:
-            raise "Wrong data type, got:", type(X)
+        self.scalers_ = [MinMaxScaler((-1, 1)) for _ in xrange(self.depth)]
 
         if self.K <= 2:
             self.models_ = [self.base_cls() for _ in xrange(self.depth)]
-        # for m in self.models_:
-        #    m.set_params(random_state=self.random_state)    # is this necessary?
-        # else :
+            # for m in self.models_:
+            #    m.set_params(random_state=self.random_state)    # is this necessary?
+            # else :
         else:
             if self.is_base_multiclass:
                 if self.base_cls.func != LogisticRegression:
@@ -197,6 +215,11 @@ class R2Learner(BaseEstimator):
             else:
                 self.models_ = [OneVsRestClassifier(self.base_cls().set_params(random_state=self.random_state), \
                                                     n_jobs=1) for _ in xrange(self.depth)]
+
+        if self.switched:
+            if self.base_cls.func != ELM:
+                raise NotImplementedError, "Only switching from ELM to LinearSVC is supported"
+            self.models_[-1] = LinearSVC( loss='l1', C=1, class_weight='auto', ).set_params(random_state=self.random_state)
 
         self.W = W if W else [self.random_state.normal(size=(self.K, X.shape[1])) for _ in range(self.depth - 1)]
 
@@ -215,14 +238,14 @@ class R2Learner(BaseEstimator):
         # Prepare data
         if self.scale:
             X = self.scalers_[0].transform(X)
-		
+
         _X = [X]
         # Predict
         for i in xrange(self.depth):
             X = self._feed_forward(X, i)
-            if all_layers and i != self.depth-1: # Last layer is  
+            if all_layers and i != self.depth-1: # Last layer is
                 _X.append(X)
-		
+
         if all_layers:
             return [m.predict(X_tr) for m, X_tr in zip(self.models_, _X)]
         else:
@@ -240,6 +263,10 @@ class R2Learner(BaseEstimator):
     def _rbf(x):
         return np.exp(-np.power((x - np.mean(x, axis=0)), 2))
 
+    @staticmethod
+    def _01_rbf(x):
+        return np.exp(-(np.power(x,2)/2))
+
 
 def score_all_depths_r2(model, X, Y):
     """
@@ -252,7 +279,7 @@ def score_all_depths_r2(model, X, Y):
 class R2ELMLearner(R2Learner):
     def __init__(self, activation='sigmoid', recurrent=True, depth=10, \
                  seed=None, beta=0.1, scale=False, fit_c=None, use_prev=False, max_h=100, h=10,
-                 fit_h=None, C=100, fixed_prediction=False):
+                 fit_h=None, C=100, fixed_prediction=False, switched=False):
         """
         @param fixed_prediction pass float to fix prediction to this number or pass False to learn model
         """
@@ -266,12 +293,12 @@ class R2ELMLearner(R2Learner):
 
         R2Learner.__init__(self, fixed_prediction=fixed_prediction, activation=activation, recurrent=recurrent, depth=depth, \
                            seed=seed, beta=beta, scale=scale, use_prev=use_prev, base_cls=base_cls,
-                           is_base_multiclass=True, fit_c=fit_c, C=C)
+                           is_base_multiclass=True, fit_c=fit_c, C=C, switched=switched)
 
 
 class R2SVMLearner(R2Learner):
     def __init__(self, activation='sigmoid', recurrent=True, depth=10, seed=None, beta=0.1, scale=False,
-                 fixed_prediction=False, use_prev=False, fit_c=None, C=1, use_linear_svc=True):
+                 fixed_prediction=False, use_prev=False, fit_c=None, C=1, use_linear_svc=True, switched=False):
         """
         @param fixed_prediction pass float to fix prediction to this number or pass False to learn model
         """
@@ -286,7 +313,7 @@ class R2SVMLearner(R2Learner):
 
             R2Learner.__init__(self, fixed_prediction=fixed_prediction, activation=activation, recurrent=recurrent, depth=depth, \
                                seed=seed, beta=beta, fit_c=fit_c, scale=scale, use_prev=use_prev, base_cls=base_cls,
-                               is_base_multiclass=True)
+                               is_base_multiclass=True, switched=switched)
 
 
 class R2LRLearner(R2Learner):

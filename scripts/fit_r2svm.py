@@ -12,30 +12,32 @@ import logging
 import multiprocessing as mlp
 
 
-n_jobs = 8
+n_jobs = 1
 
 assert len(sys.argv) in [1,2]
 
+params = {'beta': [0.1, 0.5, 1.0, 1.5, 2.0],
+                     'depth': [i for i in xrange(1,11)],
+                     'fit_c': ['random'],
+                     'scale': [True, False],
+                     'recurrent': [True, False],
+                     'use_prev': [True, False],
+                     'seed': [666],
+                     'fixed_prediction': [1]}
+
 params = {'beta': [0.1],
-          'fit_c': ['random_cls'],
-          'activation': ['sigmoid'],
-          'scale': [ False],
-          'recurrent': [True],
-          'use_prev': [True],
-          'seed': [666]}
+                     'fit_c': ['random'],
+                     'scale': [True],
+                     'recurrent': [True],
+                     'use_prev': [False],
+                     'seed': [666]}
 
-# params = {'beta': [0.1, 0.2, 0.3],
-#           'fit_c': ['random_cls'],              # SINGLE
-#           'activation': ['sigmoid'],        # SINGLE
-#           'scale': [True],
-#           'recurrent': [True],
-#           'use_prev': [True],
-#           'seed': [666]}
+datasets = fetch_uci_datasets(['iris'])
+print len(datasets)
 
-datasets = fetch_uci_datasets(['heart'])
 model = R2SVMLearner()
 param_list = ParameterGrid(params)
-exp_name = 'test'
+exp_name = 'unit_test'
 
 def gen_params():
     for data in datasets:
@@ -46,8 +48,8 @@ params = list(gen_params())
 
 def run(p):
     try:
-        k_fold(base_model=p['model'], params=p['params'], data=p['data'], exp_name=p['name'], model_name=p['model_name'],
-           save_model=False, log=False)
+        k_fold(base_model=p['model'], params=p['params'], data=p['data'], exp_name=p['name'],
+               model_name=p['model_name'], all_layers=True)
     except Exception:
         print p['params']
         print traceback.format_exc()

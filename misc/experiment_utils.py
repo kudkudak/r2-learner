@@ -107,7 +107,7 @@ def save_exp(E, dir_name):
 def shorten_params(params):
     short_params = ""
     for k, v in params.iteritems():
-        if k in ['C', 'beta', 'h', 'scale', 'recurrent', 'use_prev', 'gamma']:
+        if k in ['C', 'beta', 'h', 'scale', 'recurrent', 'use_prev', 'gamma', 'depth']:
             short_params += str(k)[0]
             if type(v) == float:
                 short_params += "%2.2f" % v

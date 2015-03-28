@@ -1,6 +1,7 @@
 from sklearn.grid_search import GridSearchCV, ParameterGrid
 from sklearn.cross_validation import StratifiedKFold, cross_val_score
 from sklearn.metrics import accuracy_score
+from sklearn.preprocessing import MinMaxScaler, Normalizer
 from data_api import shuffle_data
 from misc.experiment_utils import save_exp, get_exp_logger, shorten_params, exp_done
 from datetime import datetime
@@ -8,6 +9,9 @@ import time
 import numpy as np
 import sys
 from r2 import score_all_depths_r2, _r2_compress_model
+import scipy
+from sklearn.base import clone
+from copy import copy
 
 def grid_search(model, data, param_grid, logger=None, scoring='accuracy', store_clf=False, n_jobs=8,
                 seed=None, more=False, n_folds=5, verbose=0):
@@ -74,12 +78,14 @@ def grid_search(model, data, param_grid, logger=None, scoring='accuracy', store_
     save_exp(experiment)
 
 
-def k_fold(base_model, params, data, exp_name, model_name,  n_folds=5, seed=None, store_clf=True, log=True, n_tries=3, save_model=True):
-
+def k_fold(base_model, params, data, exp_name, model_name,  n_folds=5, seed=None, store_clf=True, log=True, n_tries=3, save_model=True, all_layers=True):
 
     assert hasattr(data, 'name')
     assert hasattr(data, 'data')
     assert hasattr(data, 'target')
+
+    if seed is None:
+        seed = params['seed']
 
     results = {}
     monitors = {}
@@ -98,6 +104,7 @@ def k_fold(base_model, params, data, exp_name, model_name,  n_folds=5, seed=None
     dir_name = exp_name + '_' + model_name + '_' + data.name
 
     if save_model and exp_done(experiment, dir_name):
+        print "exp already done"
         return
 
     monitors["acc_fold"] = []
@@ -111,9 +118,9 @@ def k_fold(base_model, params, data, exp_name, model_name,  n_folds=5, seed=None
 
     X, Y = data.data, data.target
     folds = StratifiedKFold(y=Y, n_folds=n_folds, shuffle=True, random_state=seed)
-    i = 0
+
     for train_index, test_index in folds:
-        i += 1
+
         X_train, X_test, Y_train, Y_test = X[train_index], X[test_index], Y[train_index], Y[test_index]
 
         fold_accs = []
@@ -121,14 +128,22 @@ def k_fold(base_model, params, data, exp_name, model_name,  n_folds=5, seed=None
         fold_test_times = []
 
         for seed_bias in xrange(n_tries):
-            params['seed'] += seed_bias
+            fold_params = copy(params)
+            fold_params['seed'] += seed_bias
             train_start = time.time()
-            model = base_model.set_params(**params)
+            model = clone(base_model).set_params(**fold_params)
             model.fit(X_train, Y_train)
             fold_train_times.append(time.time() - train_start)
 
             test_start = time.time()
-            best_depth, score = score_all_depths_r2(model, X_test, Y_test)
+
+            if all_layers:
+                best_depth, score = score_all_depths_r2(model, X_test, Y_test)
+            else:
+                Y_pred = model.predict(X_test)
+                score = accuracy_score(Y_test, Y_pred)
+                best_depth = params['depth']
+
             fold_test_times.append(time.time() - test_start)
 
             if store_clf :
@@ -173,7 +188,7 @@ def nk_folds(model, params, data, n=50, n_folds=10, n_jobs=4):
 
     return np.mean(scores), np.std(scores)
 
-def extern_k_fold(base_model, params, data, exp_name, model_name, n_folds=5, seed=None, store_clf=False, log=True, save_model=True):
+def extern_k_fold(base_model, params, data, exp_name, model_name, n_folds=5, seed=666, store_clf=False, log=True, save_model=True):
 
     assert hasattr(data, 'name')
     assert hasattr(data, 'data')
@@ -192,7 +207,11 @@ def extern_k_fold(base_model, params, data, exp_name, model_name, n_folds=5, see
     short_params = shorten_params(params)
 
     config['experiment_name'] = exp_name + '_' + model_name + '_' + data.name + '_' + short_params
-    dir_name = exp_name + '-' + model_name + '_' + data.name
+    dir_name = exp_name + '_' + model_name + '_' + data.name
+
+    if save_model and exp_done(experiment, dir_name):
+        print "exp already done"
+        return
 
     monitors["acc_fold"] = []
     monitors["train_time"] = []
@@ -202,15 +221,15 @@ def extern_k_fold(base_model, params, data, exp_name, model_name, n_folds=5, see
     if log:
         logger = get_exp_logger(config, dir_name, to_file=True, to_std=False)
 
-    X, Y = data.data, data.target
-    folds = StratifiedKFold(y=Y, n_folds=n_folds, shuffle=True, random_state=seed)
-    i = 0
-    for train_index, test_index in folds:
-        i += 1
-        X_train, X_test, Y_train, Y_test = X[train_index], X[test_index], Y[train_index], Y[test_index]
+    Y = data.target
+    X = MinMaxScaler((-1,1)).fit_transform(data.data)
 
+    folds = StratifiedKFold(y=Y, n_folds=n_folds, shuffle=True, random_state=seed)
+
+    for train_index, test_index in folds:
+        X_train, X_test, Y_train, Y_test = X[train_index], X[test_index], Y[train_index], Y[test_index]
         train_start = time.time()
-        model = base_model.set_params(**params)
+        model = clone(base_model).set_params(**params)
         model.fit(X_train, Y_train)
         train_time = time.time() - train_start
 
