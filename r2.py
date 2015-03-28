@@ -126,12 +126,12 @@ class R2Learner(BaseEstimator):
                 if not self.fixed_prediction or i == self.depth - 1:
                     best_C = None
                     best_score = 0.
-                    fit_size = 7
+                    fit_size = 4
                     if type(self.models_[i]) == ELM:
                         c = [10**j for j in xrange(0, fit_size)]
                     elif type(self.models_[i]) == LinearSVC or type(self.models_[i] == SVC) :
                         c = np.random.uniform(size=fit_size)
-                        c = MinMaxScaler((-2, 10)).fit_transform(c)
+                        c = MinMaxScaler((-2, 8)).fit_transform(c)
                         c = [np.exp(x) for x in c]
                         # Add one and previous
                         c = list(set(c).union([1]).union([self._prev_C])) if self._prev_C else list(set(c).union([1]))
@@ -140,9 +140,10 @@ class R2Learner(BaseEstimator):
                         model = clone(self.models_[i]).set_params(estimator__C=c[j]) if not self.is_base_multiclass \
                                                                                         and self.K > 2 else \
                             clone(self.models_[i]).set_params(C=c[j])
-                        scores = cross_val_score(model, X, Y, scoring='accuracy', \
-                                                 cv=KFold(X.shape[0], shuffle=True, random_state=self.random_state))
-                        score = scores.mean()
+                        score = sklearn.metrics.accuracy_score(model.fit(X,Y).predict(X), Y)
+                        #scores = cross_val_score(model, X, Y, scoring='accuracy', \
+                        #                         cv=KFold(X.shape[0], shuffle=True, random_state=self.random_state))
+                        #score = scores.mean()
                         if score > best_score:
                             best_score = score
                             best_C = c[j]
@@ -164,7 +165,7 @@ class R2Learner(BaseEstimator):
                 raise NotImplementedError("self.fixed_prediction is wut?")
 
             if self.recurrent:
-                self._delta += np.dot(self._o[i], self.W[i])
+                self._delta = sum(np.dot(self._o[j], self.W[i][j]) for j in range(i+1))
             else:
                 self._delta = np.dot(self._o[i], self.W[i])
 
@@ -221,7 +222,11 @@ class R2Learner(BaseEstimator):
                 raise NotImplementedError, "Only switching from ELM to LinearSVC is supported"
             self.models_[-1] = LinearSVC( loss='l1', C=1, class_weight='auto', ).set_params(random_state=self.random_state)
 
-        self.W = W if W else [self.random_state.normal(size=(self.K, X.shape[1])) for _ in range(self.depth - 1)]
+        if self.recurrent:
+            self.W = W if W else [[self.random_state.normal(size=(self.K, X.shape[1])) for _ in range(i+1)] \
+                                  for i in range(self.depth - 1)]
+        else:
+            self.W = W if W else [self.random_state.normal(size=(self.K, X.shape[1])) for _ in range(self.depth - 1)]
 
         # Prepare data
         if self.scale:
@@ -303,6 +308,8 @@ class R2SVMLearner(R2Learner):
         @param fixed_prediction pass float to fix prediction to this number or pass False to learn model
         """
         if not use_linear_svc:
+            raise NotImplementedError("Deprecated. SVC seems much slower for it has to be wrapped as multiclass")            
+
             base_cls = partial(SVC, class_weight='auto', kernel='linear', C=C)
 
             R2Learner.__init__(self, fixed_prediction=fixed_prediction, activation=activation, recurrent=recurrent, depth=depth, \

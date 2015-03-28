@@ -26,16 +26,17 @@ params = {'beta': [0.1, 0.5, 1.0, 1.5, 2.0],
                      'fixed_prediction': [1]}
 
 params = {'beta': [0.1],
-                     'fit_c': ['random'],
+                     'fit_c': ['random', None],
                      'scale': [True],
                      'recurrent': [True],
                      'use_prev': [False],
-                     'seed': [666]}
+                     'seed': [666],
+                     'use_linear_svc': [True]}
 
-datasets = fetch_uci_datasets(['iris'])
+datasets = fetch_uci_datasets(['fourclass'])
 print len(datasets)
 
-model = R2SVMLearner()
+model = R2SVMLearner
 param_list = ParameterGrid(params)
 exp_name = 'unit_test'
 
@@ -49,7 +50,7 @@ params = list(gen_params())
 def run(p):
     try:
         k_fold(base_model=p['model'], params=p['params'], data=p['data'], exp_name=p['name'],
-               model_name=p['model_name'], all_layers=True)
+               model_name=p['model_name'], all_layers=True, save_model=True)
     except Exception:
         print p['params']
         print traceback.format_exc()

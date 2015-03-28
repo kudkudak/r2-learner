@@ -3,7 +3,6 @@
 import sys, os
 import traceback
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-from data_api import fetch_uci_datasets
 from sklearn.grid_search import ParameterGrid
 from multiprocessing import Pool
 
@@ -12,19 +11,13 @@ from r2 import R2ELMLearner, R2SVMLearner, R2LRLearner
 import time
 from data_api import *
 
+datasets = fetch_small_datasets()
+datasets += fetch_new_datasets()
 
-# assert len(sys.argv) > 1
-#
-# names = sys.argv[1:]
-# print names
-# datasets = fetch_uci_datasets(names)
-
-datasets = fetch_uci_datasets(['diabetes'])
-
-n_jobs = 16
+n_jobs = 8
 
 r2svm_params = {'beta': [0.1, 0.5, 1.0, 1.5, 2.0],
-                'fit_c': ['random'],
+                'fit_c': ['random', None],
                 'scale': [True, False],
                 'recurrent': [True, False],
                 'use_prev': [True, False],
@@ -32,15 +25,15 @@ r2svm_params = {'beta': [0.1, 0.5, 1.0, 1.5, 2.0],
 
 r2elm_params = {'h': [i for i in xrange(20,101,20)],
                 'beta': [0.1, 0.5, 1.0, 1.5, 2.0],
-                'activation': ['01_rbf'],
-                'fit_c': ['random'],
+                'activation': ['sigmoid'],
+                'fit_c': ['random', None],
                 'scale': [True, False],
                 'recurrent': [True, False],
                 'use_prev': [True, False],
                 'seed': [666]}
 
-exp_params = [{'model': R2SVMLearner(), 'params': r2svm_params, 'exp_name': 'triple', 'model_name': 'r2svm'},
-              {'model': R2ELMLearner(), 'params': r2elm_params, 'exp_name': 'triple', 'model_name': 'r2elm'},]
+exp_params = [{'model': R2SVMLearner(), 'params': r2svm_params, 'exp_name': 'test', 'model_name': 'r2svm'},
+              {'model': R2ELMLearner(), 'params': r2elm_params, 'exp_name': 'test', 'model_name': 'r2elm'},]
 
 
 

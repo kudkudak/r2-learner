@@ -45,7 +45,7 @@ print len(params)
 def run(p):
     try:
         extern_k_fold(base_model=p['model'], params=p['params'], data=p['data'], exp_name=p['name'],
-                  model_name=p['model_name'])
+                  model_name=p['model_name'], save_model=True)
     except Exception:
             print p['model']
             print traceback.format_exc()

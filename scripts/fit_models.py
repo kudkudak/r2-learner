@@ -131,7 +131,7 @@ def k_fold(base_model, params, data, exp_name, model_name,  n_folds=5, seed=None
             fold_params = copy(params)
             fold_params['seed'] += seed_bias
             train_start = time.time()
-            model = clone(base_model).set_params(**fold_params)
+            model = base_model(**fold_params)
             model.fit(X_train, Y_train)
             fold_train_times.append(time.time() - train_start)
 

@@ -11,8 +11,7 @@ from r2 import R2ELMLearner, R2SVMLearner, R2LRLearner
 import time
 from data_api import *
 
-datasets = fetch_small_datasets()
-datasets += fetch_new_datasets()
+datasets = fetch_tripled_datasets()
 
 n_jobs = 8
 
@@ -25,17 +24,7 @@ fixed_r2svm_params = {'beta': [0.1, 0.5, 1.0, 1.5, 2.0],
                      'seed': [666],
                      'fixed_prediction': [1]}
 
-random_r2svm_params = {'beta': [0.1, 0.5, 1.0, 1.5, 2.0],
-                       'depth': [i for i in xrange(1,11)],
-                       'fit_c': ['random_cls'],
-                       'scale': [True, False],
-                       'recurrent': [True, False],
-                       'use_prev': [True, False],
-                       'seed': [666]}
-
-
-exp_params = [{'model': R2SVMLearner(), 'params': fixed_r2svm_params, 'exp_name': 'fixed', 'model_name': 'r2svm'},
-              {'model': R2SVMLearner(), 'params': random_r2svm_params, 'exp_name': 'random', 'model_name': 'r2svm'}]
+exp_params = [{'model': R2SVMLearner(), 'params': fixed_r2svm_params, 'exp_name': 'triple_fixed', 'model_name': 'r2svm'}]
 
 
 def gen_params():
@@ -55,7 +44,6 @@ def run(p):
     except:
         print p['model']
         print traceback.format_exc()
-
 
 pool = Pool(n_jobs)
 rs = pool.map_async(run, params, 1)

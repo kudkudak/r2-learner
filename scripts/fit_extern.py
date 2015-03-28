@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import sys, os
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
@@ -25,18 +27,16 @@ elm_params = {'h': [i for i in xrange(20, 101, 20)],
           'activation': ['sigmoid'],
           'random_state': [666]}
 
-# datasets = fetch_tripled_datasets()
-# datasets = fetch_small_datasets()
-# datasets += fetch_new_datasets()
-# datasets += fetch_medium_datasets()
 
-datasets = fetch_uci_datasets(['satimage', 'segment'], tripled=True)
+datasets = fetch_small_datasets()
+datasets += fetch_new_datasets()
+datasets += fetch_medium_datasets()
 
 print " ".join([data.name for data in datasets])
 
-exp_params = [#{'model': LinearSVC(), 'params': liner_svm_params, 'exp_name': 'triple', 'model_name': 'linear_svm'},
-              {'model': SVC(), 'params': svm_params, 'exp_name': 'triple', 'model_name': 'svm'},
-              {'model': ELM(), 'params': elm_params, 'exp_name': 'triple', 'model_name': 'elm'}]
+exp_params = [{'model': LinearSVC(), 'params': liner_svm_params, 'exp_name': 'test', 'model_name': 'linear_svm'},
+              {'model': SVC(), 'params': svm_params, 'exp_name': 'test', 'model_name': 'svm'},
+              {'model': ELM(), 'params': elm_params, 'exp_name': 'test', 'model_name': 'elm'}]
 
 
 def gen_params():
@@ -56,10 +56,6 @@ def run(p):
     except Exception:
         print p['model']
         print traceback.format_exc()
-
-# for i, p in enumerate(params):
-#     run(p)
-#     print "done %i/%i with %s" % (i, len(params), p['model_name'])
 
 p = Pool(n_jobs)
 rs = p.map_async(run, params, 1)

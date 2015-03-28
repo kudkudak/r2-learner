@@ -58,6 +58,9 @@ data/
 
 # PyCharm
 .idea/
+*.swp
+*.swn
+*.swo
 
 # IPython Notebook checkpoints
 .ipynb_checkpoints/
@@ -69,6 +72,11 @@ notebooks/.ipynb_checkpoints/
 # experiments
 logs/
 cache/
+spiral.out
+spiral.counter.out
+notebooks/separating_two_moon.pkl
+notebooks/W_separating_two_moon.txt
+hardcopy.0
 
 # fermi
 connect_fermi.sh
