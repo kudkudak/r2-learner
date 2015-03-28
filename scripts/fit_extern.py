@@ -2,9 +2,7 @@
 
 import sys, os
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-
 from sklearn.grid_search import GridSearchCV, ParameterGrid
-import numpy as np
 from multiprocessing import Pool
 from fit_models import extern_k_fold
 from data_api import *
@@ -34,9 +32,9 @@ datasets += fetch_medium_datasets()
 
 print " ".join([data.name for data in datasets])
 
-exp_params = [{'model': LinearSVC(), 'params': liner_svm_params, 'exp_name': 'test', 'model_name': 'linear_svm'},
-              {'model': SVC(), 'params': svm_params, 'exp_name': 'test', 'model_name': 'svm'},
-              {'model': ELM(), 'params': elm_params, 'exp_name': 'test', 'model_name': 'elm'}]
+exp_params = [{'model': LinearSVC, 'params': liner_svm_params, 'exp_name': 'test', 'model_name': 'linear_svm'},
+              {'model': SVC, 'params': svm_params, 'exp_name': 'test', 'model_name': 'svm'},
+              {'model': ELM, 'params': elm_params, 'exp_name': 'test', 'model_name': 'elm'}]
 
 
 def gen_params():

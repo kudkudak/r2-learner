@@ -5,7 +5,6 @@ import traceback
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from sklearn.grid_search import ParameterGrid
 from multiprocessing import Pool
-
 from fit_models import k_fold
 from r2 import R2ELMLearner, R2SVMLearner, R2LRLearner
 import time
@@ -14,7 +13,7 @@ from data_api import *
 datasets = fetch_small_datasets()
 datasets += fetch_new_datasets()
 
-n_jobs = 8
+n_jobs = 4
 
 r2svm_params = {'beta': [0.1, 0.5, 1.0, 1.5, 2.0],
                 'fit_c': ['random', None],
@@ -32,8 +31,8 @@ r2elm_params = {'h': [i for i in xrange(20,101,20)],
                 'use_prev': [True, False],
                 'seed': [666]}
 
-exp_params = [{'model': R2SVMLearner(), 'params': r2svm_params, 'exp_name': 'test', 'model_name': 'r2svm'},
-              {'model': R2ELMLearner(), 'params': r2elm_params, 'exp_name': 'test', 'model_name': 'r2elm'},]
+exp_params = [{'model': R2SVMLearner, 'params': r2svm_params, 'exp_name': 'test', 'model_name': 'r2svm'},
+              {'model': R2ELMLearner, 'params': r2elm_params, 'exp_name': 'test', 'model_name': 'r2elm'}]
 
 
 
@@ -54,11 +53,6 @@ def run(p):
     except:
         print p['model']
         print traceback.format_exc()
-
-
-# for i, p in enumerate(params):
-#     run(p)
-#     print "done %i/%i with %s" % (i, len(params), p['model_name'])
 
 pool = Pool(n_jobs)
 rs = pool.map_async(run, params, 1)

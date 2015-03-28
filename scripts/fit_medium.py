@@ -5,7 +5,6 @@ import traceback
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from sklearn.grid_search import ParameterGrid
 from multiprocessing import Pool
-
 from fit_models import k_fold
 from r2 import R2ELMLearner, R2SVMLearner, R2LRLearner
 import time
@@ -16,7 +15,7 @@ datasets = fetch_medium_datasets()
 n_jobs = 8
 
 r2svm_params = {'beta': [0.1, 0.5, 1.0, 1.5, 2.0],
-                'fit_c': ['random'],
+                'fit_c': ['random', None],
                 'scale': [True, False],
                 'recurrent': [True, False],
                 'use_prev': [True, False],
@@ -25,7 +24,7 @@ r2svm_params = {'beta': [0.1, 0.5, 1.0, 1.5, 2.0],
 r2elm_params = {'h': [i for i in xrange(20,101,20)],
                 'beta': [0.1, 0.5, 1.0, 1.5, 2.0],
                 'activation': ['sigmoid'],
-                'fit_c': ['random'],
+                'fit_c': ['random', None],
                 'scale': [True, False],
                 'recurrent': [True, False],
                 'use_prev': [True, False],
@@ -33,7 +32,7 @@ r2elm_params = {'h': [i for i in xrange(20,101,20)],
 
 fixed_r2svm_params = {'beta': [0.1, 0.5, 1.0, 1.5, 2.0],
                      'depth': [i for i in xrange(1,11)],
-                     'fit_c': ['random'],
+                     'fit_c': ['random', None],
                      'scale': [True, False],
                      'recurrent': [True, False],
                      'use_prev': [True, False],
@@ -48,10 +47,10 @@ random_r2svm_params = {'beta': [0.1, 0.5, 1.0, 1.5, 2.0],
                        'use_prev': [True, False],
                        'seed': [666]}
 
-exp_params = [{'model': R2SVMLearner(), 'params': r2svm_params, 'exp_name': 'test', 'model_name': 'r2svm'},
-              {'model': R2ELMLearner(), 'params': r2elm_params, 'exp_name': 'test', 'model_name': 'r2elm'},
-              {'model': R2SVMLearner(), 'params': fixed_r2svm_params, 'exp_name': 'fixed', 'model_name': 'r2svm'},
-              {'model': R2SVMLearner(), 'params': random_r2svm_params, 'exp_name': 'random', 'model_name': 'r2svm'}]
+exp_params = [{'model': R2SVMLearner, 'params': r2svm_params, 'exp_name': 'test', 'model_name': 'r2svm'},
+              {'model': R2ELMLearner, 'params': r2elm_params, 'exp_name': 'test', 'model_name': 'r2elm'},
+              {'model': R2SVMLearner, 'params': fixed_r2svm_params, 'exp_name': 'fixed', 'model_name': 'r2svm'},
+              {'model': R2SVMLearner, 'params': random_r2svm_params, 'exp_name': 'random', 'model_name': 'r2svm'}]
 
 
 

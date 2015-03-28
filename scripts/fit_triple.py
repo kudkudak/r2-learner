@@ -17,14 +17,14 @@ n_jobs = 8
 
 fixed_r2svm_params = {'beta': [0.1, 0.5, 1.0, 1.5, 2.0],
                      'depth': [i for i in xrange(1,11)],
-                     'fit_c': ['random'],
+                     'fit_c': ['random', None],
                      'scale': [True, False],
                      'recurrent': [True, False],
                      'use_prev': [True, False],
                      'seed': [666],
                      'fixed_prediction': [1]}
 
-exp_params = [{'model': R2SVMLearner(), 'params': fixed_r2svm_params, 'exp_name': 'triple_fixed', 'model_name': 'r2svm'}]
+exp_params = [{'model': R2SVMLearner, 'params': fixed_r2svm_params, 'exp_name': 'triple_fixed', 'model_name': 'r2svm'}]
 
 
 def gen_params():
