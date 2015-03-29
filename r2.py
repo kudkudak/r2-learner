@@ -217,8 +217,9 @@ class R2Learner(BaseEstimator):
                 else:
                     self.models_ = [self.base_cls() for _ in xrange(self.depth)]
             else:
-                self.models_ = [OneVsRestClassifier(self.base_cls().set_params(random_state=self.random_state), \
-                                                    n_jobs=1) for _ in xrange(self.depth)]
+                raise NotImplementedError, "None base mutliclass models are deprecated."
+                # self.models_ = [OneVsRestClassifier(self.base_cls().set_params(random_state=self.random_state), \
+                #                                     n_jobs=1) for _ in xrange(self.depth)]
 
         if self.switched:
             if self.base_cls.func != ELM:

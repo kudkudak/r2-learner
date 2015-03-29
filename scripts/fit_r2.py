@@ -13,7 +13,7 @@ from data_api import *
 datasets = fetch_small_datasets()
 datasets += fetch_new_datasets()
 
-n_jobs = 4
+n_jobs = 1
 
 r2svm_params = {'beta': [0.1, 0.5, 1.0, 1.5, 2.0],
                 'fit_c': ['random', None],
@@ -31,7 +31,7 @@ r2elm_params = {'h': [i for i in xrange(20,101,20)],
                 'use_prev': [True, False],
                 'seed': [666]}
 
-exp_params = [{'model': R2SVMLearner, 'params': r2svm_params, 'exp_name': 'test', 'model_name': 'r2svm'},
+exp_params = [ {'model': R2SVMLearner, 'params': r2svm_params, 'exp_name': 'test', 'model_name': 'r2svm'},
               {'model': R2ELMLearner, 'params': r2elm_params, 'exp_name': 'test', 'model_name': 'r2elm'}]
 
 

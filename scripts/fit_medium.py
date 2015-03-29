@@ -6,7 +6,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from sklearn.grid_search import ParameterGrid
 from multiprocessing import Pool
 from fit_models import k_fold
-from r2 import R2ELMLearner, R2SVMLearner, R2LRLearner
+from r2 import R2ELMLearner, R2SVMLearner
 import time
 from data_api import *
 

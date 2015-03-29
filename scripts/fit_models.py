@@ -78,7 +78,7 @@ def grid_search(model, data, param_grid, logger=None, scoring='accuracy', store_
     save_exp(experiment)
 
 
-def k_fold(base_model, params, data, exp_name, model_name,  n_folds=5, seed=None, store_clf=True, log=True, n_tries=3, save_model=True, all_layers=True):
+def k_fold(base_model, params, data, exp_name, model_name,  n_folds=5, seed=None, store_clf=False, log=True, n_tries=3, save_model=True, all_layers=True):
 
     assert hasattr(data, 'name')
     assert hasattr(data, 'data')
