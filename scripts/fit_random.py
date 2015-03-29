@@ -13,7 +13,7 @@ from data_api import *
 datasets = fetch_small_datasets()
 datasets += fetch_new_datasets()
 
-n_jobs = 4
+n_jobs = 1
 
 fixed_r2svm_params = {'beta': [0.1, 0.5, 1.0, 1.5, 2.0],
                      'depth': [i for i in xrange(1,11)],

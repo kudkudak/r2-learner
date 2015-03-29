@@ -16,7 +16,7 @@ from sklearn.base import BaseEstimator, clone
 
 class MyLinModel(BaseEstimator):
     def __init__(self,w,b):
-        assert len(b.shape) == 1
+        assert isinstance(b, (int, long, float)) or len(b.shape) == 1
         self.w=w
         self.b=b
 
@@ -41,6 +41,9 @@ def _r2_compress_model(r2):
     """
     # #
     #MyLinModel(r2.models_[id].coef_, r2.models_[id].intercept_)
+    r2._X_tr = []
+    r2._X_moved = []
+    r2.X_tr = []
     for id, m in enumerate(r2.models_):
         # I know it should be class testing ok?
         if hasattr(r2.models_[id], 'coef_'):

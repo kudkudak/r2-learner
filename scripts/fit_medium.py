@@ -12,7 +12,7 @@ from data_api import *
 
 datasets = fetch_medium_datasets()
 
-n_jobs = 8
+n_jobs = 1
 
 r2svm_params = {'beta': [0.1, 0.5, 1.0, 1.5, 2.0],
                 'fit_c': ['random', None],
@@ -66,7 +66,7 @@ params = list(gen_params())
 
 def run(p):
     try:
-        if p['exp_name'] == 'test':
+        if p['name'] == 'test':
             k_fold(base_model=p['model'], params=p['params'], data=p['data'], exp_name=p['name'],
                    model_name=p['model_name'], all_layers=True)
         else :
