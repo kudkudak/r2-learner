@@ -10,26 +10,22 @@ from data_api import *
 from r2 import R2SVMLearner
 import time
 
-n_jobs = 8
-
-assert len(sys.argv) in [1,2]
+n_jobs = 16
 
 params = {'beta': [0.1, 0.5, 1.0, 1.5, 2.0],
-                     'depth': [i for i in xrange(1,11)],
-                     'fit_c': ['random', None],
-                     'scale': [True, False],
-                     'recurrent': [True, False],
-                     'use_prev': [True, False],
-                     'seed': [666]}
+          'fit_c': ['random', None],
+          'scale': [True, False],
+          'recurrent': [True, False],
+          'use_prev': [True, False],
+          'seed': [666]}
 
+datasets = fetch_uci_datasets(['vehicle', 'vowel'])
 
-datasets = fetch_new_datasets()
-datasets += fetch_small_datasets()
 print len(datasets)
 
 model = R2SVMLearner
 param_list = ParameterGrid(params)
-exp_name = 'unit_test'
+exp_name = 'test'
 
 def gen_params():
     for data in datasets:

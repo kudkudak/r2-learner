@@ -228,7 +228,7 @@ def extern_k_fold(base_model, params, data, exp_name, model_name, n_folds=5, see
     for train_index, test_index in folds:
         X_train, X_test, Y_train, Y_test = X[train_index], X[test_index], Y[train_index], Y[test_index]
         train_start = time.time()
-        model = clone(base_model).set_params(**params)
+        model = base_model(**params)
         model.fit(X_train, Y_train)
         train_time = time.time() - train_start
 

@@ -45,6 +45,9 @@ def fetch_uci_datasets(names, tripled=False):
     assert(os.path.exists(os.path.join(data_dir, 'mushrooms')))
     assert(os.path.exists(os.path.join(data_dir, 'sonar_scale')))
     assert(os.path.exists(os.path.join(data_dir, 'splice')))
+    assert(os.path.exists(os.path.join(data_dir, 'vowel.scale')))
+    assert(os.path.exists(os.path.join(data_dir, 'vowel.scale.t')))
+    assert(os.path.exists(os.path.join(data_dir, 'vehicle.scale')))
 
     uci_datasets = []
 
@@ -84,6 +87,16 @@ def fetch_uci_datasets(names, tripled=False):
         indian_x, indian_y = datasets.load_svmlight_file(os.path.join(data_dir, 'indian'))
         indian = Bunch(**{'name': 'indian', 'data': indian_x.toarray(), 'target': indian_y})
         uci_datasets.append(indian)
+    if 'vowel' in names:
+        vowel_train_x, \
+        vowel_train_y, \
+        vowel_test_x, \
+        vowel_test_y = datasets.load_svmlight_files((os.path.join(data_dir, 'vowel.scale'),
+                                                   os.path.join(data_dir, 'vowel.scale.t')))
+        vowel_x = vstack([vowel_train_x, vowel_test_x])
+        vowel_y = np.hstack([vowel_train_y, vowel_test_y])
+        vowel = Bunch(**{'name': 'vowel', 'data': vowel_x.toarray(), 'target': vowel_y, 'DESC': 'libsvm vowel dataset'})
+        uci_datasets.append(vowel)
     if 'heart' in names:
         heart_x, heart_y = datasets.load_svmlight_file(os.path.join(data_dir, 'heart'))
         heart_x = heart_x.toarray()
@@ -103,6 +116,10 @@ def fetch_uci_datasets(names, tripled=False):
         pen_y = np.hstack([pen_train_y, pen_test_y])
         pendigits = Bunch(**{'name': 'pendigits', 'data': pen_x.toarray(), 'target': pen_y, 'DESC': 'libsvm pendigits dataset'})
         uci_datasets.append(pendigits)
+    if 'vehicle' in names:
+        vehicle_x, vehicle_y = datasets.load_svmlight_file(os.path.join(data_dir, 'vehicle.scale'))
+        vehicle = Bunch(**{'name': 'vehicle', 'data': vehicle_x.toarray(), 'target': vehicle_y})
+        uci_datasets.append(vehicle)
     if 'segment' in names:
         segment = datasets.fetch_mldata('segment')
         segment.name = 'segment'
@@ -176,7 +193,7 @@ def fetch_uci_datasets(names, tripled=False):
 
 
 def fetch_tripled_datasets():
-    return fetch_uci_datasets(['fourclass', 'iris', 'wine', 'liver', 'diabetess', 'glass', 'breast_cancer', 'indian',
+    return fetch_uci_datasets(['fourclass', 'iris', 'wine', 'liver', 'diabetes', 'bank', 'glass', 'breast_cancer', 'indian',
                                'heart', 'australian', 'crashes', 'german', 'ionosphere', 'sonar', 'splice'],
                               tripled=True)
 
@@ -205,7 +222,7 @@ def fetch_all_datasets(): # for when shit gets real
 
 def fetch_new_datasets():
     return fetch_uci_datasets(['australian', 'bank', 'breast_cancer', 'crashes', 'diabetes', 'fourclass', \
-                               'german', 'indian', 'ionosphere', 'mushrooms', 'sonar', 'splice'])
+                               'german', 'indian', 'ionosphere', 'mushrooms', 'sonar', 'splice', 'vehicle', 'vowel'])
 
 
 def fetch_synthetic_datasets():

@@ -15,15 +15,15 @@ import traceback
 n_jobs = 4
 
 liner_svm_params = {'C': [np.exp(i) for i in xrange(-7,7)],
-              'loss':['l1']}
+                    'loss':['l1']}
 
 svm_params = {'C': [np.exp(i) for i in xrange(-7,7)],
               'gamma': [np.exp(i) for i in xrange(-10,11)]}
 
 elm_params = {'h': [i for i in xrange(20, 101, 20)],
-          'C': [10**i for i in xrange(0, 7)],
-          'activation': ['sigmoid'],
-          'random_state': [666]}
+              'C': [10**i for i in xrange(0, 7)],
+              'activation': ['sigmoid'],
+              'random_state': [666]}
 
 
 datasets = fetch_uci_datasets(['pendigits'])
