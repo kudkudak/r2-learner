@@ -160,7 +160,7 @@ def k_fold(base_model, params, data, exp_name, model_name,  n_folds=5, seed=None
     if all_layers:
         results['best_depth'] = np.argmax(np.mean(monitors['fold_scores'], axis=0)) + 1
         results['mean_acc'] = np.max(np.mean(monitors['fold_scores'], axis=0))
-        results['std'] = monitors['fold_scores'][results['best_depth'] - 1, :].std()
+        # results['std'] = monitors['fold_scores'][results['best_depth'] - 1, :].std()
     else:
         results['mean_acc'] = monitors['fold_scores'].mean()
         results['std'] = monitors['fold_scores'].std()
