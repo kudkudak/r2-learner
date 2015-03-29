@@ -12,9 +12,9 @@ from sklearn.svm import SVC
 import time
 from data_api import *
 
-datasets = fetch_medium_tripled_datasets()
+datasets = fetch_uci_datasets(['vowel', 'vehicle'], tripled=True)
 
-n_jobs = 22
+n_jobs = 8
 
 fixed_r2svm_params = {'beta': [0.1, 0.5, 1.0, 1.5, 2.0],
                       'depth': [i for i in xrange(1,11)],

@@ -53,11 +53,11 @@ def run(p):
         print p['model']
         print traceback.format_exc()
 
-p = Pool(n_jobs)
-rs = p.map_async(run, params, 1)
-while True :
-    if rs.ready():
-        break
-    remaining = rs._number_left
-    print "Waiting for", remaining, "tasks to complete"
-    time.sleep(3)
+# p = Pool(n_jobs)
+# rs = p.map_async(run, params, 1)
+# while True :
+#     if rs.ready():
+#         break
+#     remaining = rs._number_left
+#     print "Waiting for", remaining, "tasks to complete"
+#     time.sleep(3)
