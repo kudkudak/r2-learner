@@ -125,16 +125,16 @@ class R2Learner(BaseEstimator):
                         self.models_[i] = MyLinModel(w, b)
                 else:
                     self.models_[i].fit(X, Y)
-            elif self.fit_c == 'random':
+            elif self.fit_c == 'random' or self.fit_c == 'random_exhaustive':
                 if not self.fixed_prediction or i == self.depth - 1:
                     best_C = None
                     best_score = 0.
-                    fit_size = 4
+                    fit_size = 7 if self.fit_c == 'random_exhaustive' else 4
                     if type(self.models_[i]) == ELM:
                         c = [10**j for j in xrange(0, fit_size)]
                     elif type(self.models_[i]) == LinearSVC or type(self.models_[i] == SVC) :
                         c = np.random.uniform(size=fit_size)
-                        c = MinMaxScaler((-2, 8)).fit_transform(c)
+                        c = MinMaxScaler((-2, 10)).fit_transform(c) if self.fit_c == 'random_exhaustive' else MinMaxScaler((-2,8)).fit_transform(c)
                         c = [np.exp(x) for x in c]
                         # Add one and previous
                         c = list(set(c).union([1]).union([self._prev_C])) if self._prev_C else list(set(c).union([1]))
