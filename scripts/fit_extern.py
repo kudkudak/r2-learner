@@ -26,7 +26,7 @@ elm_params = {'h': [i for i in xrange(20, 101, 20)],
               'random_state': [666]}
 
 
-datasets = fetch_uci_datasets(['pendigits'])
+datasets = fetch_uci_datasets(['vowel', 'vehicle'])
 
 print " ".join([data.name for data in datasets])
 
