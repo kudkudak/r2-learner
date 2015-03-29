@@ -12,7 +12,7 @@ from sklearn.svm import SVC
 import time
 from data_api import *
 
-datasets = fetch_uci_datasets(['svmguide2', 'svmguide4'], tripled=True)
+datasets = fetch_uci_datasets(['svmguide2', 'svmguide4'])
 
 n_jobs = 8
 
@@ -32,12 +32,27 @@ r2svm_params = {'beta': [0.1, 0.5, 1.0, 1.5, 2.0],
                 'use_prev': [True, False],
                 'seed': [666]}
 
-svm_params = {'C': [np.exp(i) for i in xrange(-7,7)],
-              'gamma': [np.exp(i) for i in xrange(-10,11)]}
+random_r2svm_params = {'beta': [0.1, 0.5, 1.0, 1.5, 2.0],
+                       'depth': [i for i in xrange(1,11)],
+                       'fit_c': ['random_cls'],
+                       'scale': [True, False],
+                       'recurrent': [True, False],
+                       'use_prev': [True, False],
+                       'seed': [666]}
 
-exp_params = [{'model': R2SVMLearner, 'params': fixed_r2svm_params, 'exp_name': 'triple_fixed', 'model_name': 'r2svm'},
-              {'model': R2SVMLearner, 'params': r2svm_params, 'exp_name': 'triple', 'model_name': 'r2svm'},
-              {'model': SVC, 'params': svm_params, 'exp_name': 'triple', 'model_name': 'svm'}]
+r2elm_params = {'h': [i for i in xrange(20,101,20)],
+                'beta': [0.1, 0.5, 1.0, 1.5, 2.0],
+                'activation': ['sigmoid'],
+                'fit_c': ['random', None],
+                'scale': [True, False],
+                'recurrent': [True, False],
+                'use_prev': [True, False],
+                'seed': [666]}
+
+exp_params = [{'model': R2SVMLearner, 'params': fixed_r2svm_params, 'exp_name': 'fixed', 'model_name': 'r2svm'},
+              {'model': R2SVMLearner, 'params': r2svm_params, 'exp_name': 'test', 'model_name': 'r2svm'},
+              {'model': R2SVMLearner, 'params': random_r2svm_params, 'exp_name': 'random', 'model_name': 'r2svm'},
+              {'model': R2ELMLearner, 'params': r2elm_params, 'exp_name': 'test', 'model_name': 'r2elm'}]
 
 
 def gen_params():
@@ -52,15 +67,13 @@ params = list(gen_params())
 
 def run(p):
     try:
-        if p['name'] == 'triple_fixed':
+        if p['name'] == 'fixed' or p['name'] == 'random':
             k_fold(base_model=p['model'], params=p['params'], data=p['data'], exp_name=p['name'],
                    model_name=p['model_name'], all_layers=False)
-        elif p['model_name'] == 'r2svm':
+        else:
             k_fold(base_model=p['model'], params=p['params'], data=p['data'], exp_name=p['name'],
                    model_name=p['model_name'], all_layers=True)
-        else:
-            extern_k_fold(base_model=p['model'], params=p['params'], data=p['data'], exp_name=p['name'],
-                          model_name=p['model_name'])
+
     except:
         print p['model']
         print traceback.format_exc()
@@ -74,3 +87,4 @@ while True:
     remaining = rs._number_left
     print "Waiting for", remaining, "tasks to complete"
     time.sleep(3)
+

@@ -48,6 +48,9 @@ def fetch_uci_datasets(names, tripled=False):
     assert(os.path.exists(os.path.join(data_dir, 'vowel.scale')))
     assert(os.path.exists(os.path.join(data_dir, 'vowel.scale.t')))
     assert(os.path.exists(os.path.join(data_dir, 'vehicle.scale')))
+    assert(os.path.exists(os.path.join(data_dir, 'svmguide2')))
+    assert(os.path.exists(os.path.join(data_dir, 'svmguide4')))
+    assert(os.path.exists(os.path.join(data_dir, 'svmguide4.t')))
 
     uci_datasets = []
 
@@ -97,6 +100,16 @@ def fetch_uci_datasets(names, tripled=False):
         vowel_y = np.hstack([vowel_train_y, vowel_test_y])
         vowel = Bunch(**{'name': 'vowel', 'data': vowel_x.toarray(), 'target': vowel_y, 'DESC': 'libsvm vowel dataset'})
         uci_datasets.append(vowel)
+    if 'svmguide4' in names:
+        svmguide4_train_x, \
+        svmguide4_train_y, \
+        svmguide4_test_x, \
+        svmguide4_test_y = datasets.load_svmlight_files((os.path.join(data_dir, 'svmguide4'),
+                                                   os.path.join(data_dir, 'svmguide4.t')))
+        svmguide4_x = vstack([svmguide4_train_x, svmguide4_test_x])
+        svmguide4_y = np.hstack([svmguide4_train_y, svmguide4_test_y])
+        svmguide4 = Bunch(**{'name': 'svmguide4', 'data': svmguide4_x.toarray(), 'target': svmguide4_y, 'DESC': 'libsvm svmguide4 dataset'})
+        uci_datasets.append(svmguide4)
     if 'heart' in names:
         heart_x, heart_y = datasets.load_svmlight_file(os.path.join(data_dir, 'heart'))
         heart_x = heart_x.toarray()
@@ -124,6 +137,10 @@ def fetch_uci_datasets(names, tripled=False):
         segment = datasets.fetch_mldata('segment')
         segment.name = 'segment'
         uci_datasets.append(segment)
+    if 'svmguide2' in names:
+        svmguide2_x, svmguide2_y = datasets.load_svmlight_file(os.path.join(data_dir, 'svmguide2'))
+        svmguide2 = Bunch(**{'name': 'svmguide2', 'data': svmguide2_x.toarray(), 'target': svmguide2_y})
+        uci_datasets.append(svmguide2)
     if 'crashes' in names:
         crashes_x, crashes_y = datasets.load_svmlight_file(os.path.join(data_dir, 'crashes'))
         crashes = Bunch(**{'name': 'crashes', 'data': crashes_x.toarray(), 'target': crashes_y})

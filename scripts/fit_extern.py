@@ -12,7 +12,7 @@ from elm import ELM
 import time
 import traceback
 
-n_jobs = 4
+n_jobs = 16
 
 liner_svm_params = {'C': [np.exp(i) for i in xrange(-7,7)],
                     'loss':['l1']}
@@ -26,13 +26,14 @@ elm_params = {'h': [i for i in xrange(20, 101, 20)],
               'random_state': [666]}
 
 
-datasets = fetch_uci_datasets(['vowel', 'vehicle'])
+datasets = fetch_uci_datasets(['vehicle', 'vowel'])
+
 
 print " ".join([data.name for data in datasets])
 
 exp_params = [{'model': LinearSVC, 'params': liner_svm_params, 'exp_name': 'test', 'model_name': 'linear_svm'},
-              {'model': SVC, 'params': svm_params, 'exp_name': 'test', 'model_name': 'svm'},
-              {'model': ELM, 'params': elm_params, 'exp_name': 'test', 'model_name': 'elm'}]
+              {'model': SVC, 'params': svm_params, 'exp_name': 'test', 'model_name': 'svm'}]
+              #{'model': ELM, 'params': elm_params, 'exp_name': 'test', 'model_name': 'elm'}]
 
 
 def gen_params():
@@ -53,11 +54,11 @@ def run(p):
         print p['model']
         print traceback.format_exc()
 
-# p = Pool(n_jobs)
-# rs = p.map_async(run, params, 1)
-# while True :
-#     if rs.ready():
-#         break
-#     remaining = rs._number_left
-#     print "Waiting for", remaining, "tasks to complete"
-#     time.sleep(3)
+p = Pool(n_jobs)
+rs = p.map_async(run, params, 1)
+while True :
+    if rs.ready():
+        break
+    remaining = rs._number_left
+    print "Waiting for", remaining, "tasks to complete"
+    time.sleep(3)

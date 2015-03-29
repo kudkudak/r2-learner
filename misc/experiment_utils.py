@@ -110,7 +110,7 @@ def shorten_params(params):
         if k in ['C', 'beta', 'h', 'scale', 'recurrent', 'use_prev', 'gamma', 'depth', 'fit_c']:
             short_params += str(k)[0]
             if type(v) == float:
-                short_params += "%2.2f" % v
+                short_params += str(v)
             elif type(v) == int:
                 short_params += str(v)
             elif type(v) == bool:
@@ -119,7 +119,7 @@ def shorten_params(params):
             elif v is None:
                 short_params += 'No'
             else:
-                short_params += str(v)[:2]
+                short_params += str(v)
             short_params += '_'
 
     return short_params
