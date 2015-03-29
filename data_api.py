@@ -180,6 +180,9 @@ def fetch_tripled_datasets():
                                'heart', 'australian', 'crashes', 'german', 'ionosphere', 'sonar', 'splice'],
                               tripled=True)
 
+def fetch_medium_tripled_datasets():
+    return fetch_uci_datasets(['satimage', 'segment', 'pendigits'], tripled=True)
+
 def fetch_small_datasets():
     return fetch_uci_datasets(['iris', 'liver', 'heart', 'wine', 'glass'])
 

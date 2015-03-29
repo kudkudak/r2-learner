@@ -6,8 +6,9 @@ sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from sklearn.grid_search import ParameterGrid
 from multiprocessing import Pool
 
-from fit_models import k_fold
+from fit_models import k_fold, extern_k_fold
 from r2 import R2ELMLearner, R2SVMLearner, R2LRLearner
+from sklearn.svm import SVC
 import time
 from data_api import *
 
@@ -15,16 +16,18 @@ datasets = fetch_tripled_datasets()
 
 n_jobs = 8
 
-fixed_r2svm_params = {'beta': [0.1, 0.5, 1.0, 1.5, 2.0],
-                     'depth': [i for i in xrange(1,11)],
-                     'fit_c': ['random', None],
-                     'scale': [True, False],
-                     'recurrent': [True, False],
-                     'use_prev': [True, False],
-                     'seed': [666],
-                     'fixed_prediction': [1]}
+r2svm_params = {'beta': [0.1, 0.5, 1.0, 1.5, 2.0],
+                'fit_c': ['random', None],
+                'scale': [True, False],
+                'recurrent': [True, False],
+                'use_prev': [True, False],
+                'seed': [666]}
 
-exp_params = [{'model': R2SVMLearner, 'params': fixed_r2svm_params, 'exp_name': 'triple_fixed', 'model_name': 'r2svm'}]
+svm_params = {'C': [np.exp(i) for i in xrange(-7,7)],
+              'gamma': [np.exp(i) for i in xrange(-10,11)]}
+
+exp_params = [{'model': R2SVMLearner, 'params': r2svm_params, 'exp_name': 'triple', 'model_name': 'r2svm'},
+              {'model': SVC, 'params': svm_params, 'exp_name': 'triple', 'model_name': 'svm'}]
 
 
 def gen_params():
@@ -39,8 +42,12 @@ params = list(gen_params())
 
 def run(p):
     try:
-        k_fold(base_model=p['model'], params=p['params'], data=p['data'], exp_name=p['name'],
-           model_name=p['model_name'], all_layers=False)
+        if p['model_name'] == 'r2svm':
+            k_fold(base_model=p['model'], params=p['params'], data=p['data'], exp_name=p['name'],
+                   model_name=p['model_name'], all_layers=True)
+        else:
+            extern_k_fold(base_model=p['model'], params=p['params'], data=p['data'], exp_name=p['name'],
+                   model_name=p['model_name'])
     except:
         print p['model']
         print traceback.format_exc()
