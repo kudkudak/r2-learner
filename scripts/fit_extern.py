@@ -26,14 +26,14 @@ elm_params = {'h': [i for i in xrange(20, 101, 20)],
               'random_state': [666]}
 
 
-datasets = fetch_uci_datasets(['vehicle', 'vowel'])
+datasets = fetch_uci_datasets(['svmguide2', 'svmguide4'])
 
 
 print " ".join([data.name for data in datasets])
 
 exp_params = [{'model': LinearSVC, 'params': liner_svm_params, 'exp_name': 'test', 'model_name': 'linear_svm'},
-              {'model': SVC, 'params': svm_params, 'exp_name': 'test', 'model_name': 'svm'}]
-              #{'model': ELM, 'params': elm_params, 'exp_name': 'test', 'model_name': 'elm'}]
+              {'model': SVC, 'params': svm_params, 'exp_name': 'test', 'model_name': 'svm'},
+              {'model': ELM, 'params': elm_params, 'exp_name': 'test', 'model_name': 'elm'}]
 
 
 def gen_params():
