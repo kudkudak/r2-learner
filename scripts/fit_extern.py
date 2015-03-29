@@ -26,9 +26,7 @@ elm_params = {'h': [i for i in xrange(20, 101, 20)],
           'random_state': [666]}
 
 
-datasets = fetch_small_datasets()
-datasets += fetch_new_datasets()
-datasets += fetch_medium_datasets()
+datasets = fetch_uci_datasets(['pendigits'])
 
 print " ".join([data.name for data in datasets])
 

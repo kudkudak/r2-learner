@@ -107,11 +107,10 @@ def k_fold(base_model, params, data, exp_name, model_name,  n_folds=5, seed=None
         print "exp already done"
         return
 
-    monitors["acc_fold"] = []
+    monitors["fold_scores"] = []
     monitors["train_time"] = []
     monitors["test_time"] = []
     monitors["clf"] = []
-    monitors["best_depth"] = []
 
     if log:
         logger = get_exp_logger(config, dir_name, to_file=True, to_std=False)
@@ -123,7 +122,7 @@ def k_fold(base_model, params, data, exp_name, model_name,  n_folds=5, seed=None
 
         X_train, X_test, Y_train, Y_test = X[train_index], X[test_index], Y[train_index], Y[test_index]
 
-        fold_accs = []
+        fold_scores = []
         fold_train_times = []
         fold_test_times = []
 
@@ -138,40 +137,40 @@ def k_fold(base_model, params, data, exp_name, model_name,  n_folds=5, seed=None
             test_start = time.time()
 
             if all_layers:
-                best_depth, score = score_all_depths_r2(model, X_test, Y_test)
+                fold_scores.append(score_all_depths_r2(model, X_test, Y_test))
             else:
                 Y_pred = model.predict(X_test)
-                score = accuracy_score(Y_test, Y_pred)
-                best_depth = params['depth']
+                fold_scores.append(accuracy_score(Y_test, Y_pred))
 
             fold_test_times.append(time.time() - test_start)
 
             if store_clf :
                 monitors['clf'].append(_r2_compress_model(model))
 
-            fold_accs.append(score)
-
         monitors['train_time'].append(fold_train_times)
         monitors['test_time'].append(fold_test_times)
-        monitors['acc_fold'].append(fold_accs)
-        monitors['best_depth'].append(best_depth)
-        #print "Done: %i/%i" % (i, len(folds))
-
-    monitors['acc_fold'] = np.array(monitors['acc_fold'])
-    monitors['std'] = monitors['acc_fold'].std()
+        monitors['fold_scores'].append(np.mean(np.array(fold_scores), axis=0))
 
     monitors['n_dim'] = data.n_dim
     monitors['n_class'] = data.n_class
     monitors['data_name'] = data.name
 
-    results["mean_acc"] = monitors["acc_fold"].mean()
+    monitors['fold_scores'] = np.array(monitors['fold_scores'])
+
+    if all_layers:
+        results['best_depth'] = np.argmax(np.mean(monitors['fold_scores'], axis=0)) + 1
+        results['mean_acc'] = np.max(np.mean(monitors['fold_scores'], axis=0))
+        results['std'] = monitors['fold_scores'][results['best_depth'] - 1, :].std()
+    else:
+        results['mean_acc'] = monitors['fold_scores'].mean()
+        results['std'] = monitors['fold_scores'].std()
+        results['best_depth'] = params['depth']
 
     if log:
         logger.info(config)
         logger.info(results)
         logger.info(monitors)
 
-    # UNCOMMENT FOR REAL TESTING!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     if save_model:
         save_exp(experiment, dir_name)
 

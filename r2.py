@@ -281,9 +281,7 @@ def score_all_depths_r2(model, X, Y):
     """
     @returns depth, score_for_this_depth
     """
-    scores = [sklearn.metrics.accuracy_score(Y_pred, Y) for Y_pred in model.predict(X, all_layers=True)]
-    return np.argmax(scores)+1, scores[np.argmax(scores)]
-
+    return [sklearn.metrics.accuracy_score(Y_pred, Y) for Y_pred in model.predict(X, all_layers=True)]
 
 class R2ELMLearner(R2Learner):
     def __init__(self, activation='sigmoid', recurrent=True, depth=10, \

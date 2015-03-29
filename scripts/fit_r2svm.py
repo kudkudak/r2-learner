@@ -10,8 +10,7 @@ from data_api import *
 from r2 import R2SVMLearner
 import time
 
-
-n_jobs = 16
+n_jobs = 8
 
 assert len(sys.argv) in [1,2]
 
