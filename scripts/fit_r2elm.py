@@ -10,7 +10,7 @@ from r2 import R2ELMLearner
 import time
 import traceback
 
-n_jobs = 1
+n_jobs = 16
 
 params = {'h': [i for i in xrange(20,101,20)],
           'beta': [0.1, 0.5, 1.0, 1.5, 2.0],
