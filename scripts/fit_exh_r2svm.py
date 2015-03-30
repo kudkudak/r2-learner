@@ -10,7 +10,7 @@ from data_api import *
 from r2 import R2SVMLearner
 import time
 
-n_jobs = 16
+n_jobs = 24
 
 params = {'beta': [0.05, 0.1, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0],
           'fit_c': ['random_exhaustive'],
@@ -25,7 +25,7 @@ print len(datasets)
 
 model = R2SVMLearner
 param_list = ParameterGrid(params)
-exp_name = 'exh_'
+exp_name = 'exh'
 
 def gen_params():
     for data in datasets:

@@ -4,7 +4,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 import pickle
 from scipy.sparse import vstack
-import math
+import cPickle
 import os
 from misc.config import c
 from sklearn.decomposition import PCA
@@ -209,6 +209,20 @@ def fetch_uci_datasets(names, tripled=False):
     return uci_datasets
 
 
+def fetch_cifar(batch=1):
+    assert(os.path.exists(os.path.join(data_dir, 'cifar-10-batches-py', 'data_batch_' + str(batch))))
+
+    f = open(os.path.join(data_dir, 'cifar-10-batches-py', 'data_batch_' + str(batch)), 'rb')
+    cifar_ = cPickle.load(f)
+
+    data = cifar_['data'] / 255.
+    cifar = Bunch(**{'name': 'cifar', 'data': data, 'target': cifar_['labels']})
+    cifar.n_class = 10
+    cifar.n_dim = cifar.data.shape[1]
+    cifar.n_nows = cifar.data.shape[0]
+    #cifar.man_size = manifold_dim(cifar.data)
+    return cifar
+
 def fetch_tripled_datasets():
     return fetch_uci_datasets(['fourclass', 'iris', 'wine', 'liver', 'diabetes', 'bank', 'glass', 'breast_cancer', 'indian',
                                'heart', 'australian', 'crashes', 'german', 'ionosphere', 'sonar', 'splice'],
@@ -219,7 +233,6 @@ def fetch_medium_tripled_datasets():
 
 def fetch_small_datasets():
     return fetch_uci_datasets(['iris', 'liver', 'heart', 'wine', 'glass'])
-
 
 def fetch_binray_datasets():
     return fetch_uci_datasets(['liver', 'heart'])
@@ -238,8 +251,9 @@ def fetch_all_datasets(): # for when shit gets real
                                'pendigits', 'mnist', 'news20', 'covtype', 'aloi'])
 
 def fetch_new_datasets():
-    return fetch_uci_datasets(['australian', 'bank', 'breast_cancer', 'crashes', 'diabetes', 'fourclass', \
-                               'german', 'indian', 'ionosphere', 'mushrooms', 'sonar', 'splice', 'vehicle', 'vowel'])
+    return fetch_uci_datasets(['australian', 'bank', 'breast_cancer', 'crashes', 'diabetes', 'fourclass', 'svmguide2', \
+                               'german', 'indian', 'ionosphere', 'mushrooms', 'sonar', 'splice', 'vehicle', 'vowel',
+                               'svmguide4'])
 
 
 def fetch_synthetic_datasets():

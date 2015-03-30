@@ -132,7 +132,7 @@ class R2Learner(BaseEstimator):
                     fit_size = 7 if self.fit_c == 'random_exhaustive' else 4
                     if type(self.models_[i]) == ELM:
                         c = [10**j for j in xrange(0, fit_size)]
-                    elif type(self.models_[i]) == LinearSVC or type(self.models_[i] == SVC) :
+                    elif type(self.models_[i]) == LinearSVC or type(self.models_[i] == LogisticRegression) :
                         c = np.random.uniform(size=fit_size)
                         c = MinMaxScaler((-2, 10)).fit_transform(c) if self.fit_c == 'random_exhaustive' else MinMaxScaler((-2,8)).fit_transform(c)
                         c = [np.exp(x) for x in c]
@@ -205,26 +205,18 @@ class R2Learner(BaseEstimator):
         # Models and scalers
         self.scalers_ = [MinMaxScaler((-1, 1)) for _ in xrange(self.depth)]
 
-        if self.K <= 2:
-            self.models_ = [self.base_cls() for _ in xrange(self.depth)]
-            # for m in self.models_:
-            #    m.set_params(random_state=self.random_state)    # is this necessary?
-            # else :
+        if not self.is_base_multiclass:
+            raise NotImplementedError, "None base mutliclass models are deprecated."
+
+        if self.base_cls.func != LogisticRegression:
+            self.models_ = [self.base_cls().set_params(random_state=self.random_state) for _ in xrange(self.depth)]
         else:
-            if self.is_base_multiclass:
-                if self.base_cls.func != LogisticRegression:
-                    self.models_ = [self.base_cls().set_params(random_state=self.random_state) for _ in xrange(self.depth)]
-                else:
-                    self.models_ = [self.base_cls() for _ in xrange(self.depth)]
-            else:
-                raise NotImplementedError, "None base mutliclass models are deprecated."
-                # self.models_ = [OneVsRestClassifier(self.base_cls().set_params(random_state=self.random_state), \
-                #                                     n_jobs=1) for _ in xrange(self.depth)]
+            self.models_ = [self.base_cls() for _ in xrange(self.depth)]
 
         if self.switched:
-            if self.base_cls.func != ELM:
-                raise NotImplementedError, "Only switching from ELM to LinearSVC is supported"
-            self.models_[-1] = LinearSVC( loss='l1', C=1, class_weight='auto', ).set_params(random_state=self.random_state)
+            if self.base_cls.func != LogisticRegression:
+                raise NotImplementedError, "Only switching from LR to LinearSVC is supported"
+            self.models_[-1] = LinearSVC(loss='l1', C=1, class_weight='auto', random_state=self.random_state)
 
         if self.recurrent:
             self.W = W if W else [[self.random_state.normal(size=(self.K, X.shape[1])) for _ in range(i+1)] \
@@ -327,10 +319,10 @@ class R2SVMLearner(R2Learner):
 
 class R2LRLearner(R2Learner):
     def __init__(self, activation='sigmoid', recurrent=True, depth=10, seed=None, beta=0.1, scale=False, \
-                 fixed_prediction=False, use_prev=False, logger=None):
+                 fixed_prediction=False, use_prev=False, logger=None, fit_c=None, switched=False):
 
         base_cls =  partial(LogisticRegression, fit_intercept=True)
 
         R2Learner.__init__(self, fixed_prediction=fixed_prediction, activation=activation, recurrent=recurrent, depth=depth, \
-                               seed=seed, beta=beta, scale=scale, use_prev=use_prev, base_cls=base_cls,
-                               is_base_multiclass=True)
+                               seed=seed, beta=beta, scale=scale, use_prev=use_prev, base_cls=base_cls, fit_c=fit_c,
+                               is_base_multiclass=True, switched=switched)

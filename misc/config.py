@@ -22,7 +22,7 @@ def get_logger(name):
     logger.addHandler(ch_file)
     return logger
 
-# logger = get_logger("cores_r2learner")
+logger = get_logger("cores_r2learner")
 
 
 # TODO: check what we need here
