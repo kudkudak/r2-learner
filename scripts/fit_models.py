@@ -111,6 +111,7 @@ def k_fold(base_model, params, data, exp_name, model_name,  n_folds=5, seed=None
     monitors["train_time"] = []
     monitors["test_time"] = []
     monitors["clf"] = []
+    monitors['fold_std'] = []
 
     if log:
         logger = get_exp_logger(config, dir_name, to_file=True, to_std=False)
@@ -150,6 +151,7 @@ def k_fold(base_model, params, data, exp_name, model_name,  n_folds=5, seed=None
         monitors['train_time'].append(fold_train_times)
         monitors['test_time'].append(fold_test_times)
         monitors['fold_scores'].append(np.mean(np.array(fold_scores), axis=0))
+        monitors['fold_std'].append(np.std(np.array(fold_scores), axis=0))
 
     monitors['n_dim'] = data.n_dim
     monitors['n_class'] = data.n_class
@@ -160,7 +162,7 @@ def k_fold(base_model, params, data, exp_name, model_name,  n_folds=5, seed=None
     if all_layers:
         results['best_depth'] = np.argmax(np.mean(monitors['fold_scores'], axis=0)) + 1
         results['mean_acc'] = np.max(np.mean(monitors['fold_scores'], axis=0))
-        # results['std'] = monitors['fold_scores'][results['best_depth'] - 1, :].std()
+        results['std'] = np.mean(np.array(monitors['fold_std']), axis=0)[results['best_depth'] - 1]
     else:
         results['mean_acc'] = monitors['fold_scores'].mean()
         results['std'] = monitors['fold_scores'].std()

@@ -24,7 +24,6 @@ r2svm_params = {'beta': [0.1, 0.5, 1.0, 1.5, 2.0],
 
 r2elm_params = {'h': [i for i in xrange(20,101,20)],
                 'beta': [0.1, 0.5, 1.0, 1.5, 2.0],
-                'activation': ['sigmoid'],
                 'fit_c': ['random', None],
                 'scale': [True, False],
                 'recurrent': [True, False],

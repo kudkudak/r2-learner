@@ -10,16 +10,17 @@ from data_api import *
 from r2 import R2SVMLearner
 import time
 
-n_jobs = 16
+n_jobs = 40
 
 params = {'beta': [0.1, 0.5, 1.0, 1.5, 2.0],
-          'fit_c': ['random', None],
+          'fit_c': ['random_exhaustive'],
           'scale': [True, False],
           'recurrent': [True, False],
           'use_prev': [True, False],
           'seed': [666]}
 
-datasets = fetch_uci_datasets(['vehicle', 'vowel'])
+datasets = fetch_small_datasets()
+datasets += fetch_new_datasets()
 
 print len(datasets)
 
@@ -37,7 +38,7 @@ params = list(gen_params())
 def run(p):
     try:
         k_fold(base_model=p['model'], params=p['params'], data=p['data'], exp_name=p['name'],
-               model_name=p['model_name'], all_layers=True, save_model=True)
+               model_name=p['model_name'], all_layers=True)
     except Exception:
         print p['params']
         print traceback.format_exc()

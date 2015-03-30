@@ -134,7 +134,7 @@ class R2Learner(BaseEstimator):
                         c = [10**j for j in xrange(0, fit_size)]
                     elif type(self.models_[i]) == LinearSVC or type(self.models_[i] == LogisticRegression) :
                         c = np.random.uniform(size=fit_size)
-                        c = MinMaxScaler((-2, 10)).fit_transform(c) if self.fit_c == 'random_exhaustive' else MinMaxScaler((-2,8)).fit_transform(c)
+                        c = MinMaxScaler((-7, 7)).fit_transform(c) if self.fit_c == 'random_exhaustive' else MinMaxScaler((-2,8)).fit_transform(c)
                         c = [np.exp(x) for x in c]
                         # Add one and previous
                         c = list(set(c).union([1]).union([self._prev_C])) if self._prev_C else list(set(c).union([1]))
