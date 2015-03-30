@@ -12,7 +12,7 @@ from sklearn.svm import SVC
 import time
 from data_api import *
 
-datasets = fetch_uci_datasets(['svmguide2', 'svmguide4'], tripled=True)
+datasets = fetch_uci_datasets(['segment', 'satimage'], tripled=True)
 
 n_jobs = 8
 
@@ -25,19 +25,19 @@ fixed_r2svm_params = {'beta': [0.1, 0.5, 1.0, 1.5, 2.0],
                       'seed': [666],
                       'fixed_prediction': [1]}
 
-r2svm_params = {'beta': [0.1, 0.5, 1.0, 1.5, 2.0],
-                'fit_c': ['random', None],
-                'scale': [True, False],
-                'recurrent': [True, False],
-                'use_prev': [True, False],
-                'seed': [666]}
+# r2svm_params = {'beta': [0.1, 0.5, 1.0, 1.5, 2.0],
+#                 'fit_c': ['random', None],
+#                 'scale': [True, False],
+#                 'recurrent': [True, False],
+#                 'use_prev': [True, False],
+#                 'seed': [666]}
+#
+# svm_params = {'C': [np.exp(i) for i in xrange(-7,7)],
+#               'gamma': [np.exp(i) for i in xrange(-10,11)]}
 
-svm_params = {'C': [np.exp(i) for i in xrange(-7,7)],
-              'gamma': [np.exp(i) for i in xrange(-10,11)]}
-
-exp_params = [{'model': R2SVMLearner, 'params': fixed_r2svm_params, 'exp_name': 'triple_fixed', 'model_name': 'r2svm'},
-              {'model': R2SVMLearner, 'params': r2svm_params, 'exp_name': 'triple', 'model_name': 'r2svm'},
-              {'model': SVC, 'params': svm_params, 'exp_name': 'triple', 'model_name': 'svm'}]
+exp_params = [{'model': R2SVMLearner, 'params': fixed_r2svm_params, 'exp_name': 'triple_fixed', 'model_name': 'r2svm'}]
+              # {'model': R2SVMLearner, 'params': r2svm_params, 'exp_name': 'triple', 'model_name': 'r2svm'},
+              # {'model': SVC, 'params': svm_params, 'exp_name': 'triple', 'model_name': 'svm'}]
 
 
 def gen_params():
