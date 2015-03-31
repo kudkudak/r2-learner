@@ -15,7 +15,7 @@ import traceback
 n_jobs = 16
 
 liner_svm_params = {'C': [np.exp(i) for i in xrange(-7,7)],
-                    'loss':['l1']}
+                    'loss': ['l1']}
 
 svm_params = {'C': [np.exp(i) for i in xrange(-7,7)],
               'gamma': [np.exp(i) for i in xrange(-10,11)]}

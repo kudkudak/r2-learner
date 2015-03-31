@@ -17,7 +17,7 @@ for csv_file in os.listdir(csv_dir):
     # print csv_file
     csv_results[csv_file] = pd.DataFrame.from_csv(os.path.join(csv_dir, csv_file))
 
-models = ['test_r2svm', 'test_r2elm', 'triple_r2svm']
+models = ['test_r2elm', 'triple_r2svm']
 datasets = ['glass', 'australian', 'bank','breast_cancer', 'crashes', 'liver', 'segment', 'satimage', 'heart', 'svmguide2'
             'diabetes', 'fourclass', 'german', 'indian', 'ionosphere', 'sonar', 'splice', 'iris', 'wine', 'pendigits',
             'svmguide4']

@@ -310,7 +310,7 @@ class R2SVMLearner(R2Learner):
                                seed=seed, beta=beta, scale=scale, fit_c=fit_c, use_prev=use_prev, base_cls=base_cls,
                                is_base_multiclass=False)
         else:
-            base_cls = partial(LinearSVC, loss='l1', C=C, class_weight='auto')
+            base_cls = partial(LinearSVC, loss='l1', C=C)
 
             R2Learner.__init__(self, fixed_prediction=fixed_prediction, activation=activation, recurrent=recurrent, depth=depth, \
                                seed=seed, beta=beta, fit_c=fit_c, scale=scale, use_prev=use_prev, base_cls=base_cls,

@@ -10,12 +10,11 @@ from r2 import R2ELMLearner
 import time
 import traceback
 
-n_jobs = 16
+n_jobs = 50
 
 params = {'h': [i for i in xrange(20,101,20)],
           'beta': [0.1, 0.5, 1.0, 1.5, 2.0],
-          'activation': ['sigmoid'],
-          'fit_c': ['random', None],
+          'fit_c': ['random'],
           'scale': [True, False],
           'recurrent': [True, False],
           'use_prev': [True, False],
@@ -39,15 +38,16 @@ def run(p):
     try:
         k_fold(base_model=p['model'], params=p['params'], data=p['data'], exp_name=p['name'],\
                model_name=p['model_name'], all_layers=True)
+
     except Exception:
             print p['model']
             print traceback.format_exc()
 
 pool = Pool(n_jobs)
 rs = pool.map_async(run, params,1)
+
 while True :
     if rs.ready():
-        print "Ending", rs._number_left
         break
     remaining = rs._number_left
     print "Waiting for", remaining, "tasks to complete for r2elm"

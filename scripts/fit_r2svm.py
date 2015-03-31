@@ -19,8 +19,7 @@ params = {'beta': [0.1, 0.5, 1.0, 1.5, 2.0],
           'use_prev': [True, False],
           'seed': [666]}
 
-datasets = fetch_small_datasets()
-datasets += fetch_new_datasets()
+datasets = fetch_medium_datasets()
 
 print len(datasets)
 
