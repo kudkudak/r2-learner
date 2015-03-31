@@ -18,7 +18,7 @@ n_jobs = 16
 
 fixed_r2svm_params = {'beta': [0.1, 0.5, 1.0, 1.5, 2.0],
                       'depth': [i for i in xrange(1,11)],
-                      'fit_c': ['random', None],
+                      'fit_c': ['random'],
                       'scale': [True, False],
                       'recurrent': [True, False],
                       'use_prev': [True, False],
