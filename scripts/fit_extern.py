@@ -1,18 +1,24 @@
 #!/usr/bin/env python
 
+# Fits ELM, Linear SVM and SVM RBF
+
 import sys, os
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from sklearn.grid_search import GridSearchCV, ParameterGrid
 from multiprocessing import Pool
-from fit_models import extern_k_fold
-from data_api import *
 from sklearn.svm import SVC
 from sklearn.svm import LinearSVC
-from elm import ELM
 import time
 import traceback
 
-n_jobs = 16
+
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+from misc.experiment_utils import save_exp, get_exp_logger, shorten_params, exp_done
+from r2 import score_all_depths_r2, _r2_compress_model
+from misc.data_api import *
+from fit_models import *
+from elm import ELM
+
+n_jobs = 2
 
 liner_svm_params = {'C': [np.exp(i) for i in xrange(-7,7)],
                     'loss': ['l1']}
@@ -26,7 +32,7 @@ elm_params = {'h': [i for i in xrange(20, 101, 20)],
               'random_state': [666]}
 
 
-datasets = fetch_uci_datasets(['svmguide2', 'svmguide4'])
+datasets = fetch_all_datasets()
 
 
 print " ".join([data.name for data in datasets])

@@ -1,6 +1,0 @@
-results = []
-* For each model in models:
-    E_grid, E_more_detailed = fit_model_on_dataset()
-    results.append(co_chcemy_z_modelu(E_grid, E_more_detailed)
-
-pandas_frame = pd.DataFrame(np.array(results).T) # plus jakies nazw kolumn

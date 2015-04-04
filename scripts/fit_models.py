@@ -2,16 +2,18 @@ from sklearn.grid_search import GridSearchCV, ParameterGrid
 from sklearn.cross_validation import StratifiedKFold, cross_val_score
 from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import MinMaxScaler, Normalizer
-from data_api import shuffle_data
-from misc.experiment_utils import save_exp, get_exp_logger, shorten_params, exp_done
 from datetime import datetime
-import time
+import os, time, traceback, sys
 import numpy as np
-import sys
-from r2 import score_all_depths_r2, _r2_compress_model
 import scipy
 from sklearn.base import clone
 from copy import copy
+
+
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+from misc.experiment_utils import save_exp, get_exp_logger, shorten_params, exp_done
+from r2 import score_all_depths_r2, _r2_compress_model
+from misc.data_api import shuffle_data
 
 def grid_search(model, data, param_grid, logger=None, scoring='accuracy', store_clf=False, n_jobs=8,
                 seed=None, more=False, n_folds=5, verbose=0):
@@ -189,7 +191,7 @@ def nk_folds(model, params, data, n=50, n_folds=10, n_jobs=4):
 
     return np.mean(scores), np.std(scores)
 
-def extern_k_fold(base_model, params, data, exp_name, model_name, n_folds=5, seed=666, store_clf=False, log=True, save_model=True):
+def extern_k_fold(base_model, params, data, exp_name, model_name, n_folds=5, seed=777, store_clf=False, log=True, save_model=True):
 
     assert hasattr(data, 'name')
     assert hasattr(data, 'data')

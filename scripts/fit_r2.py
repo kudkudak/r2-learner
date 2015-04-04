@@ -1,19 +1,19 @@
 #!/usr/bin/env python
 
-import sys, os
-import traceback
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+import sys, os, time, traceback
 from sklearn.grid_search import ParameterGrid
 from multiprocessing import Pool
-from fit_models import k_fold
-from r2 import R2ELMLearner, R2SVMLearner, R2LRLearner
-import time
-from data_api import *
 
-datasets = fetch_small_datasets()
-datasets += fetch_new_datasets()
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+from misc.experiment_utils import save_exp, get_exp_logger, shorten_params, exp_done
+from r2 import *
+from misc.data_api import *
+from fit_models import *
+from elm import ELM
 
-n_jobs = 1
+datasets = fetch_all_datasets()
+
+n_jobs = 2
 
 r2svm_params = {'beta': [0.1, 0.5, 1.0, 1.5, 2.0],
                 'fit_c': ['random', None],
