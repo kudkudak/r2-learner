@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# Dumps results to a CSV file
+
 import sys, os
 sys.path.append('..')
 import cPickle
